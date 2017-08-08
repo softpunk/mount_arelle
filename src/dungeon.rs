@@ -2,19 +2,23 @@ use rand::{Rng, SeedableRng};
 use rand::isaac::IsaacRng;
 use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
 
-#[derive(Serialize, Deserialize)]
+use image::{Rgba, DynamicImage, GenericImage};
+
+use std::path::Path;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
     tiles: Vec<Vec<Tile>>,
 }
 
 impl Dungeon {
-    pub fn new_from_seed(seed: String) -> Self {
-        let seed = seed.into_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
+    pub fn new_from_seed(seed: &str) -> Self {
+        let seed = seed.as_bytes().to_owned().iter().map(|n| *n as u32).collect::<Vec<u32>>();
         let mut rng = IsaacRng::from_seed(&seed);
 
         let sizes = &mut [
-            Weighted { weight: 100, item: DungeonSize::Small },
-            Weighted { weight: 300, item: DungeonSize::Med },
+            Weighted { weight: 300, item: DungeonSize::Small },
+            Weighted { weight: 100, item: DungeonSize::Med },
             Weighted { weight: 50, item: DungeonSize::Large },
         ];
         let choice = WeightedChoice::new(sizes);
@@ -25,30 +29,33 @@ impl Dungeon {
 
         match size {
             DungeonSize::Small => {
-                h = rng.gen_range(100, 201);
-                w = rng.gen_range(100, 201);
+                h = rng.gen_range(100, 301);
+                w = rng.gen_range(100, 301);
             },
             DungeonSize::Med => {
-                h = rng.gen_range(200, 301);
-                w = rng.gen_range(200, 301);
+                h = rng.gen_range(300, 501);
+                w = rng.gen_range(300, 501);
             },
             DungeonSize::Large => {
-                h = rng.gen_range(300, 401);
-                w = rng.gen_range(300, 401);
+                h = rng.gen_range(500, 701);
+                w = rng.gen_range(500, 701);
             },
         }
+        println!("{}x{}", h, w);
         let mut tiles = vec![vec![Tile::Wall; h]; w];
 
-        let attempts = rng.gen_range(70, 201);
+        let attempts = rng.gen_range(150, 301);
         let mut rooms: Vec<Room> = Vec::new();
 
         'insert: for _ in 0..attempts {
-            let width = rng.gen_range(30, 51);
-            let height = rng.gen_range(30, 51);
+            let width = rng.gen_range(10, 51);
+            let height = rng.gen_range(10, 51);
+            let x = rng.gen_range(0, w - width + 1);
+            let y = rng.gen_range(0, h - height + 1);
 
             let room = Room::new(
-                rng.gen_range(0, w - width + 1),
-                rng.gen_range(0, h - height + 1),
+                x,
+                y,
                 width,
                 height,
             );
@@ -59,19 +66,40 @@ impl Dungeon {
                 }
             }
 
-
             rooms.push(room);
         }
 
         for room in rooms {
-            for (x, y) in (room.x1()..(room.y2() + 1)).zip(room.y2()..(room.x1() + 1)) {
-                tiles[x][y] = Tile::Floor;
+            for x in room.x1()..(room.x1() + room.w) {
+                for y in room.y1()..(room.y1() + room.h) {
+                    tiles[x][y] = Tile::Floor;
+                }
             }
         }
 
         Dungeon {
             tiles: tiles,
         }
+    }
+
+    pub fn render_image<P: AsRef<Path>>(&self, path: P) {
+        let path = path.as_ref();
+
+        let width = self.tiles.len() as u32;
+        let height = self.tiles[0].len() as u32;
+        let mut image = DynamicImage::new_rgb8(width, height);
+
+        let white = Rgba { data: [255u8, 255u8, 255u8, 255u8] };
+
+        for (x, row) in self.tiles.iter().enumerate() {
+            for (y, tile) in row.iter().enumerate() {
+                if let &Tile::Floor = tile {
+                    image.put_pixel(x as u32, y as u32, white);
+                }
+            }
+        }
+
+        let _ = image.to_rgba().save(path);
     }
 }
 
@@ -82,7 +110,7 @@ enum DungeonSize {
     Large,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 enum Tile {
     Wall,
     Floor,
