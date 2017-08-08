@@ -2,9 +2,10 @@ use rand::{Rng, SeedableRng};
 use rand::isaac::IsaacRng;
 use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
 
-use image::{Rgba, DynamicImage, GenericImage};
+use image::{Rgba, DynamicImage, GenericImage, FilterType};
 
 use std::path::Path;
+use std::io;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
@@ -82,7 +83,7 @@ impl Dungeon {
         }
     }
 
-    pub fn render_image<P: AsRef<Path>>(&self, path: P) {
+    pub fn render_image<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
 
         let width = self.tiles.len() as u32;
@@ -99,7 +100,7 @@ impl Dungeon {
             }
         }
 
-        let _ = image.to_rgba().save(path);
+        image.to_rgba().save(path)
     }
 }
 

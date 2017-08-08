@@ -13,5 +13,5 @@ fn main() {
     let seed = args().nth(1).expect("No seed specified");
     let dungeon = Dungeon::new_from_seed(&seed);
 
-    dungeon.render_image(format!("{}.png", seed));
+    let _ = dungeon.render_image(format!("{}.png", seed));
 }
