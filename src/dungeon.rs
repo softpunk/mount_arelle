@@ -1,6 +1,7 @@
 use rand::{Rng, SeedableRng};
 use rand::isaac::IsaacRng;
 use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
+use rand::distributions::range::Range;
 
 use std::path::Path;
 use std::io;
@@ -15,7 +16,7 @@ pub struct Dungeon {
 
 impl Dungeon {
     pub fn new_from_seed(seed: &str) -> Self {
-        let seed = seed.as_bytes().to_owned().iter().map(|n| *n as u32).collect::<Vec<u32>>();
+        let seed = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
         let mut rng = IsaacRng::from_seed(&seed);
 
         let sizes = &mut [
@@ -26,23 +27,15 @@ impl Dungeon {
         let choice = WeightedChoice::new(sizes);
         let size = choice.ind_sample(&mut rng);
 
-        let h: usize;
-        let w: usize;
+        let bounds = match size {
+            DungeonSize::Small => Range::new(100, 301),
+            DungeonSize::Med => Range::new(300, 501),
+            DungeonSize::Large => Range::new(500, 701),
+        };
 
-        match size {
-            DungeonSize::Small => {
-                h = rng.gen_range(100, 301);
-                w = rng.gen_range(100, 301);
-            },
-            DungeonSize::Med => {
-                h = rng.gen_range(300, 501);
-                w = rng.gen_range(300, 501);
-            },
-            DungeonSize::Large => {
-                h = rng.gen_range(500, 701);
-                w = rng.gen_range(500, 701);
-            },
-        }
+        let w = bounds.ind_sample(&mut rng);
+        let h = bounds.ind_sample(&mut rng);
+
         println!("{}x{}", w, h);
         let mut grid = Grid::new(w, h, Tile::Wall);
 
