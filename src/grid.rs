@@ -1,10 +1,15 @@
+use image::{Rgba, DynamicImage, GenericImage};
+
+use std::io;
+use std::path::Path;
 use std::ops::{Index, IndexMut};
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Grid {
     tiles: Vec<Vec<Tile>>, // First Vec is x, second Vec is Y
 }
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Tile {
     Wall,
     Floor,
@@ -64,6 +69,26 @@ impl Grid {
                 },
             }
         })
+    }
+
+    pub fn render_image<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+
+        let width = self.tiles.len() as u32;
+        let height = self.tiles[0].len() as u32;
+        let mut image = DynamicImage::new_rgb8(width, height);
+
+        let white = Rgba { data: [255u8, 255u8, 255u8, 255u8] };
+
+        for (x, row) in self.tiles.iter().enumerate() {
+            for (y, tile) in row.iter().enumerate() {
+                if let &Tile::Floor = tile {
+                    image.put_pixel(x as u32, y as u32, white);
+                }
+            }
+        }
+
+        image.to_rgba().save(path)
     }
 }
 

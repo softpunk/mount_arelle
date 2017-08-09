@@ -2,14 +2,15 @@ use rand::{Rng, SeedableRng};
 use rand::isaac::IsaacRng;
 use rand::distributions::{Weighted, WeightedChoice, IndependentSample};
 
-use image::{Rgba, DynamicImage, GenericImage, FilterType};
-
 use std::path::Path;
 use std::io;
 
+use grid::Grid;
+use grid::Tile;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
-    tiles: Vec<Vec<Tile>>,
+    grid: Grid,
 }
 
 impl Dungeon {
@@ -42,8 +43,8 @@ impl Dungeon {
                 w = rng.gen_range(500, 701);
             },
         }
-        println!("{}x{}", h, w);
-        let mut tiles = vec![vec![Tile::Wall; h]; w];
+        println!("{}x{}", w, h);
+        let mut grid = Grid::new(w, h, Tile::Wall);
 
         let attempts = rng.gen_range(150, 301);
         let mut rooms: Vec<Room> = Vec::new();
@@ -73,34 +74,18 @@ impl Dungeon {
         for room in rooms {
             for x in room.x1()..(room.x1() + room.w) {
                 for y in room.y1()..(room.y1() + room.h) {
-                    tiles[x][y] = Tile::Floor;
+                    grid[(x,y)] = Tile::Floor;
                 }
             }
         }
 
         Dungeon {
-            tiles: tiles,
+            grid: grid,
         }
     }
 
-    pub fn render_image<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-        let path = path.as_ref();
-
-        let width = self.tiles.len() as u32;
-        let height = self.tiles[0].len() as u32;
-        let mut image = DynamicImage::new_rgb8(width, height);
-
-        let white = Rgba { data: [255u8, 255u8, 255u8, 255u8] };
-
-        for (x, row) in self.tiles.iter().enumerate() {
-            for (y, tile) in row.iter().enumerate() {
-                if let &Tile::Floor = tile {
-                    image.put_pixel(x as u32, y as u32, white);
-                }
-            }
-        }
-
-        image.to_rgba().save(path)
+    pub fn render_grid<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        self.grid.render_image(path)
     }
 }
 
@@ -109,12 +94,6 @@ enum DungeonSize {
     Small,
     Med,
     Large,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-enum Tile {
-    Wall,
-    Floor,
 }
 
 struct Room {
