@@ -1,4 +1,4 @@
-use image::{Rgba, DynamicImage, GenericImage};
+use image::{Rgba, DynamicImage, GenericImage, FilterType};
 
 use std::io;
 use std::path::Path;
@@ -76,7 +76,6 @@ impl Grid {
     }
 
     pub fn render_image<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-        // unimplemented!();
         let path = path.as_ref();
 
         let mut image = DynamicImage::new_rgb8(self.width, self.height);
@@ -91,7 +90,8 @@ impl Grid {
             }
         }
 
-        image.to_rgba().save(path)
+        let resized = image.resize(self.width * 5, self.height * 5, FilterType::Nearest);
+        resized.to_rgba().save(path)
     }
 }
 

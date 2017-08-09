@@ -31,9 +31,9 @@ impl Dungeon {
         let dungeon_size = WeightedChoice::new(dungeon_sizes).ind_sample(&mut rng);
 
         let dungeon_bounds = match dungeon_size {
-            DungeonSize::Small => Range::new(50, 100),
-            DungeonSize::Med => Range::new(100, 201),
-            DungeonSize::Large => Range::new(200, 301),
+            DungeonSize::Small => Range::new(30, 51),
+            DungeonSize::Med => Range::new(50, 76),
+            DungeonSize::Large => Range::new(75, 101),
         };
 
         let dw = dungeon_bounds.ind_sample(&mut rng);
@@ -47,15 +47,15 @@ impl Dungeon {
 
         'insert: for _ in 0..attempts {
             let room_sizes = &mut [
-                Weighted { weight: 500, item: RoomSize::Small },
+                Weighted { weight: 200, item: RoomSize::Small },
                 Weighted { weight: 200, item: RoomSize::Med },
                 Weighted { weight: 50, item: RoomSize::Large },
             ];
             let room_size = WeightedChoice::new(room_sizes).ind_sample(&mut rng);
             let room_bounds = match room_size {
-                RoomSize::Small => Range::new(5, 16),
-                RoomSize::Med => Range::new(15, 26),
-                RoomSize::Large => Range::new(25, 41),
+                RoomSize::Small => Range::new(5, 11),
+                RoomSize::Med => Range::new(10, 16),
+                RoomSize::Large => Range::new(15, 26),
             };
 
             let rw = room_bounds.ind_sample(&mut rng);
