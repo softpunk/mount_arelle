@@ -88,14 +88,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn check_openings1() {
-        let mut grid = Grid::new(3, 3, Tile::Floor);
-        assert_eq!(grid.openings(1, 1), Some(4));
-    }
-
-    #[test]
-    fn check_openings2() {
+    fn check_openings() {
         let mut grid = Grid::new(3, 3, Tile::Wall);
+        assert_eq!(grid.openings(1, 1), None);
+
         grid[(1, 0)] = Tile::Floor;
         grid[(1, 1)] = Tile::Floor;
         grid[(2, 1)] = Tile::Floor;
@@ -103,5 +99,11 @@ mod tests {
         assert_eq!(grid.openings(1, 1), Some(2));
         assert_eq!(grid.openings(1, 0), Some(1));
         assert_eq!(grid.openings(2, 1), Some(1));
+
+        grid[(1,2)] = Tile::Floor;
+        assert_eq!(grid.openings(1, 1), Some(3));
+
+        grid[(0,0)] = Tile::Floor;
+        assert_eq!(grid.openings(1, 1), Some(3));
     }
 }
