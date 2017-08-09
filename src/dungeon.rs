@@ -16,8 +16,12 @@ pub struct Dungeon {
 
 impl Dungeon {
     pub fn new_from_seed(seed: &str) -> Self {
-        let seed = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
-        let mut rng = IsaacRng::from_seed(&seed);
+        let mut small = 0;
+        let mut med = 0;
+        let mut large = 0;
+
+        let seed_bytes = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
+        let mut rng = IsaacRng::from_seed(&seed_bytes);
 
         let dungeon_sizes = &mut [
             Weighted { weight: 300, item: DungeonSize::Small },
@@ -27,32 +31,31 @@ impl Dungeon {
         let dungeon_size = WeightedChoice::new(dungeon_sizes).ind_sample(&mut rng);
 
         let dungeon_bounds = match dungeon_size {
-            DungeonSize::Small => Range::new(70, 151),
-            DungeonSize::Med => Range::new(150, 251),
-            DungeonSize::Large => Range::new(250, 351),
+            DungeonSize::Small => Range::new(50, 100),
+            DungeonSize::Med => Range::new(100, 201),
+            DungeonSize::Large => Range::new(200, 301),
         };
 
         let dw = dungeon_bounds.ind_sample(&mut rng);
         let dh = dungeon_bounds.ind_sample(&mut rng);
 
-        println!("{}x{}", dw, dh);
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
         let attempts = rng.gen_range(500, 1000);
         let mut rooms: Vec<Room> = Vec::new();
 
-        let room_sizes = &mut [
-            Weighted { weight: 300, item: RoomSize::Small },
-            Weighted { weight: 150, item: RoomSize::Med },
-            Weighted { weight: 50, item: RoomSize::Large },
-        ];
 
         'insert: for _ in 0..attempts {
+            let room_sizes = &mut [
+                Weighted { weight: 500, item: RoomSize::Small },
+                Weighted { weight: 200, item: RoomSize::Med },
+                Weighted { weight: 50, item: RoomSize::Large },
+            ];
             let room_size = WeightedChoice::new(room_sizes).ind_sample(&mut rng);
             let room_bounds = match room_size {
-                RoomSize::Small => Range::new(3, 11),
-                RoomSize::Med => Range::new(10, 21),
-                RoomSize::Large => Range::new(20, 31),
+                RoomSize::Small => Range::new(5, 16),
+                RoomSize::Med => Range::new(15, 26),
+                RoomSize::Large => Range::new(25, 41),
             };
 
             let rw = room_bounds.ind_sample(&mut rng);
@@ -74,8 +77,20 @@ impl Dungeon {
                 }
             }
 
+            match room_size {
+                RoomSize::Small => small += 1,
+                RoomSize::Med => med += 1,
+                RoomSize::Large => large += 1,
+            }
+
             rooms.push(room);
         }
+
+        println!("{}", seed);
+        println!("{}x{}", dw, dh);
+        println!("Small rooms: {}", small);
+        println!("Medium rooms: {}", med);
+        println!("Large rooms: {}\n", large);
 
         for room in rooms {
             for x in room.x1()..(room.x1() + room.w) {
