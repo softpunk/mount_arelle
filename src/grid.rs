@@ -20,25 +20,25 @@ pub enum Tile {
 }
 
 impl Grid {
-    pub fn new(w: usize, h: usize, tiles: Tile) -> Self {
+    pub fn new(w: u32, h: u32, tiles: Tile) -> Self {
         if w == 0 || h == 0 {
             panic!("Width and height must be greater than 0");
         }
 
         Grid {
-            tiles: vec![vec![tiles; h]; w],
+            tiles: vec![vec![tiles; h as usize]; w as usize],
         }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<&Tile> {
-        self.tiles.get(x).and_then(|row| row.get(y))
+    pub fn get(&self, x: u32, y: u32) -> Option<&Tile> {
+        self.tiles.get(x as usize).and_then(|row| row.get(y as usize))
     }
 
-    pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut Tile> {
-        self.tiles.get_mut(x).and_then(|row| row.get_mut(y))
+    pub fn get_mut(&mut self, x: u32, y: u32) -> Option<&mut Tile> {
+        self.tiles.get_mut(x as usize).and_then(|row| row.get_mut(y as usize))
     }
 
-    pub fn openings(&self, x: usize, y: usize) -> Option<u32> {
+    pub fn openings(&self, x: u32, y: u32) -> Option<u32> {
         self.get(x, y).and_then(|tile| {
             match *tile {
                 Tile::Floor => {
@@ -47,7 +47,7 @@ impl Grid {
                     if x == 0 {
                         count += 1;
                     } else {
-                        if x == self.tiles.len() - 1 {
+                        if x == self.tiles.len() as u32 - 1 {
                             count += 1;
                         } else {
                             if let Tile::Floor = self[(x-1, y)] { count += 1; }
@@ -58,7 +58,7 @@ impl Grid {
                     if y == 0 {
                         count += 1;
                     } else {
-                        if y == self.tiles[0].len() - 1 {
+                        if y == self.tiles[0].len() as u32 - 1 {
                             count += 1;
                         } else {
                             if let Tile::Floor = self[(x, y+1)] { count += 1; }
@@ -96,19 +96,17 @@ impl Grid {
     }
 }
 
-impl Index<(usize, usize)> for Grid {
+impl Index<(u32, u32)> for Grid {
     type Output = Tile;
 
-    fn index(&self, index: (usize, usize)) -> &Tile {
-        let (x, y) = index;
-        &self.tiles[x][y]
+    fn index(&self, (x, y): (u32, u32)) -> &Tile {
+        &self.tiles[x as usize][y as usize]
     }
 }
 
-impl IndexMut <(usize, usize)> for Grid {
-    fn index_mut(&mut self, index: (usize, usize)) -> &mut Tile {
-        let (x, y) = index;
-        &mut self.tiles[x][y]
+impl IndexMut <(u32, u32)> for Grid {
+    fn index_mut(&mut self, (x, y): (u32, u32)) -> &mut Tile {
+        &mut self.tiles[x as usize][y as usize]
     }
 }
 

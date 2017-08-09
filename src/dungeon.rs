@@ -90,14 +90,14 @@ enum DungeonSize {
 }
 
 struct Room {
-    x: usize, // X coordinate of top-left
-    y: usize, // Y coordinate of top-left
-    w: usize,
-    h: usize,
+    x: u32, // X coordinate of top-left
+    y: u32, // Y coordinate of top-left
+    w: u32,
+    h: u32,
 }
 
 impl Room {
-    pub fn new(x: usize, y: usize, w: usize, h: usize) -> Self {
+    pub fn new(x: u32, y: u32, w: u32, h: u32) -> Self {
         Room {
             x: x,
             y: y,
@@ -106,19 +106,19 @@ impl Room {
         }
     }
 
-    pub fn x1(&self) -> usize {
+    pub fn x1(&self) -> u32 {
         self.x
     }
 
-    pub fn x2(&self) -> usize {
+    pub fn x2(&self) -> u32 {
         self.x + self.w
     }
 
-    pub fn y1(&self) -> usize {
+    pub fn y1(&self) -> u32 {
         self.y
     }
 
-    pub fn y2(&self) -> usize {
+    pub fn y2(&self) -> u32 {
         self.y + self.h
     }
 
