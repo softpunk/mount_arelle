@@ -6,7 +6,11 @@ use std::ops::{Index, IndexMut};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Grid {
-    tiles: Vec<Vec<Tile>>, // First Vec is x, second Vec is Y
+    // First Vec is x, second Vec is Y:
+    // [[(0,0), (0,1), (0,2)],
+    //  [(1,0), (1,1), (1,2)],
+    //  [(2,0), (1,1), (2,2)]]
+    tiles: Vec<Vec<Tile>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
