@@ -19,40 +19,53 @@ impl Dungeon {
         let seed = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
         let mut rng = IsaacRng::from_seed(&seed);
 
-        let sizes = &mut [
+        let dungeon_sizes = &mut [
             Weighted { weight: 300, item: DungeonSize::Small },
             Weighted { weight: 100, item: DungeonSize::Med },
             Weighted { weight: 50, item: DungeonSize::Large },
         ];
-        let choice = WeightedChoice::new(sizes);
-        let size = choice.ind_sample(&mut rng);
+        let dungeon_size = WeightedChoice::new(dungeon_sizes).ind_sample(&mut rng);
 
-        let bounds = match size {
-            DungeonSize::Small => Range::new(100, 301),
-            DungeonSize::Med => Range::new(300, 501),
-            DungeonSize::Large => Range::new(500, 701),
+        let dungeon_bounds = match dungeon_size {
+            DungeonSize::Small => Range::new(70, 151),
+            DungeonSize::Med => Range::new(150, 251),
+            DungeonSize::Large => Range::new(250, 351),
         };
 
-        let w = bounds.ind_sample(&mut rng);
-        let h = bounds.ind_sample(&mut rng);
+        let dw = dungeon_bounds.ind_sample(&mut rng);
+        let dh = dungeon_bounds.ind_sample(&mut rng);
 
-        println!("{}x{}", w, h);
-        let mut grid = Grid::new(w, h, Tile::Wall);
+        println!("{}x{}", dw, dh);
+        let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(150, 301);
+        let attempts = rng.gen_range(500, 1000);
         let mut rooms: Vec<Room> = Vec::new();
 
+        let room_sizes = &mut [
+            Weighted { weight: 300, item: RoomSize::Small },
+            Weighted { weight: 150, item: RoomSize::Med },
+            Weighted { weight: 50, item: RoomSize::Large },
+        ];
+
         'insert: for _ in 0..attempts {
-            let width = rng.gen_range(10, 51);
-            let height = rng.gen_range(10, 51);
-            let x = rng.gen_range(0, w - width + 1);
-            let y = rng.gen_range(0, h - height + 1);
+            let room_size = WeightedChoice::new(room_sizes).ind_sample(&mut rng);
+            let room_bounds = match room_size {
+                RoomSize::Small => Range::new(3, 11),
+                RoomSize::Med => Range::new(10, 21),
+                RoomSize::Large => Range::new(20, 31),
+            };
+
+            let rw = room_bounds.ind_sample(&mut rng);
+            let rh = room_bounds.ind_sample(&mut rng);
+
+            let x = rng.gen_range(0, dw - rw + 1);
+            let y = rng.gen_range(0, dh - rh + 1);
 
             let room = Room::new(
                 x,
                 y,
-                width,
-                height,
+                rw,
+                rh,
             );
 
             for r in &rooms {
@@ -84,6 +97,13 @@ impl Dungeon {
 
 #[derive(Serialize, Deserialize, Clone)]
 enum DungeonSize {
+    Small,
+    Med,
+    Large,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+enum RoomSize {
     Small,
     Med,
     Large,
