@@ -25,8 +25,8 @@ impl Dungeon {
 
         let dungeon_sizes = &mut [
             Weighted { weight: 300, item: DungeonSize::Small },
-            Weighted { weight: 100, item: DungeonSize::Med },
-            Weighted { weight: 50, item: DungeonSize::Large },
+            Weighted { weight: 250, item: DungeonSize::Med },
+            Weighted { weight: 100, item: DungeonSize::Large },
         ];
         let dungeon_size = WeightedChoice::new(dungeon_sizes).ind_sample(&mut rng);
 
@@ -41,17 +41,37 @@ impl Dungeon {
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(500, 1000);
+        let attempts = rng.gen_range(1000, 2501);
         let mut rooms: Vec<Room> = Vec::new();
 
-
         'insert: for _ in 0..attempts {
-            let room_sizes = &mut [
-                Weighted { weight: 200, item: RoomSize::Small },
-                Weighted { weight: 200, item: RoomSize::Med },
-                Weighted { weight: 50, item: RoomSize::Large },
-            ];
-            let room_size = WeightedChoice::new(room_sizes).ind_sample(&mut rng);
+            let mut room_sizes;
+
+            match dungeon_size {
+                DungeonSize::Small => {
+                    room_sizes = [
+                        Weighted { weight: 200, item: RoomSize::Small },
+                        Weighted { weight: 150, item: RoomSize::Med },
+                        Weighted { weight:   0, item: RoomSize::Large },
+                    ];
+                },
+                DungeonSize::Med => {
+                    room_sizes = [
+                        Weighted { weight: 200, item: RoomSize::Small },
+                        Weighted { weight: 200, item: RoomSize::Med },
+                        Weighted { weight:  50, item: RoomSize::Large },
+                    ];
+                },
+                DungeonSize::Large => {
+                    room_sizes = [
+                        Weighted { weight: 200, item: RoomSize::Small },
+                        Weighted { weight: 220, item: RoomSize::Med },
+                        Weighted { weight:  80, item: RoomSize::Large },
+                    ];
+                },
+            };
+
+            let room_size = WeightedChoice::new(&mut room_sizes).ind_sample(&mut rng);
             let room_bounds = match room_size {
                 RoomSize::Small => Range::new(5, 11),
                 RoomSize::Med => Range::new(10, 16),
