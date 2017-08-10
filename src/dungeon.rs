@@ -19,7 +19,6 @@ impl Dungeon {
         let mut small = 0;
         let mut med = 0;
         let mut large = 0;
-        let mut fails = 0;
 
         let seed_bytes = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
         let mut rng = IsaacRng::from_seed(&seed_bytes);
@@ -37,15 +36,18 @@ impl Dungeon {
             DungeonSize::Large => Range::new(75, 101),
         };
 
-        let dw = dungeon_bounds.ind_sample(&mut rng);
-        let dh = dungeon_bounds.ind_sample(&mut rng);
+        // let dw = dungeon_bounds.ind_sample(&mut rng);
+        // let dh = dungeon_bounds.ind_sample(&mut rng);
+
+        let dw = 1000;
+        let dh = 1000;
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(2000, 3501);
+        let attempts = rng.gen_range(1000, 3001);
         let mut rooms: Vec<Room> = Vec::new();
 
-        'insert: for _ in 0..attempts {
+        'create_rooms: for _ in 0..attempts {
             let mut room_sizes;
 
             match dungeon_size {
@@ -82,43 +84,47 @@ impl Dungeon {
             let rw = room_bounds.ind_sample(&mut rng);
             let rh = room_bounds.ind_sample(&mut rng);
 
-            let x = rng.gen_range(0, dw - rw + 1);
-            let y = rng.gen_range(0, dh - rh + 1);
+            'place_room: for _ in 0..20 {
+                let x_range = Range::new(rw / 2, dw - (rw / 2) + 1);
+                let y_range = Range::new(rh / 2, dh - (rh / 2) + 1);
 
-            let room = Room::new(
-                x,
-                y,
-                rw,
-                rh,
-            );
+                let rx = x_range.ind_sample(&mut rng);
+                let ry = y_range.ind_sample(&mut rng);
 
-            for r in &rooms {
-                if r.intersects(&room) {
-                    fails += 1;
-                    continue 'insert;
+                let room = Room::new(
+                    rx,
+                    ry,
+                    rw,
+                    rh,
+                );
+
+                for r in &rooms {
+                    if r.intersects(&room) {
+                        continue 'place_room;
+                    }
                 }
-            }
 
-            match room_size {
-                RoomSize::Small => small += 1,
-                RoomSize::Med => med += 1,
-                RoomSize::Large => large += 1,
-            }
+                match room_size {
+                    RoomSize::Small => small += 1,
+                    RoomSize::Med => med += 1,
+                    RoomSize::Large => large += 1,
+                }
 
-            rooms.push(room);
+                rooms.push(room);
+                break 'place_room;
+            }
         }
 
         println!("{}", seed);
         println!("{}x{}", dw, dh);
         println!("Attempts: {}", attempts);
-        println!("Failed attempts: {}", fails);
         println!("Small rooms: {}", small);
         println!("Medium rooms: {}", med);
         println!("Large rooms: {}\n", large);
 
         for room in rooms {
-            for x in room.x1()..(room.x1() + room.w) {
-                for y in room.y1()..(room.y1() + room.h) {
+            for x in room.x1()..room.x2() {
+                for y in room.y1()..room.y2() {
                     grid[(x,y)] = Tile::Floor;
                 }
             }
@@ -149,36 +155,31 @@ enum RoomSize {
 }
 
 struct Room {
-    x: u32, // X coordinate of top-left
-    y: u32, // Y coordinate of top-left
+    x: u32, // X coordinate of center
+    y: u32, // Y coordinate of center
     w: u32,
     h: u32,
 }
 
 impl Room {
     pub fn new(x: u32, y: u32, w: u32, h: u32) -> Self {
-        Room {
-            x: x,
-            y: y,
-            w: w,
-            h: h,
-        }
+        Room {x: x, y: y, w: w, h: h}
     }
 
     pub fn x1(&self) -> u32 {
-        self.x
+        self.x - (self.w / 2)
     }
 
     pub fn x2(&self) -> u32 {
-        self.x + self.w
+        self.x + (self.w / 2)
     }
 
     pub fn y1(&self) -> u32 {
-        self.y
+        self.y - (self.h / 2)
     }
 
     pub fn y2(&self) -> u32 {
-        self.y + self.h
+        self.y + (self.h / 2)
     }
 
     fn intersects(&self, other: &Room) -> bool {
