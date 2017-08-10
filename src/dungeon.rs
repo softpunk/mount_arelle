@@ -19,6 +19,7 @@ impl Dungeon {
         let mut small = 0;
         let mut med = 0;
         let mut large = 0;
+        let mut fails = 0;
 
         let seed_bytes = seed.as_bytes().iter().map(|n| *n as u32).collect::<Vec<u32>>();
         let mut rng = IsaacRng::from_seed(&seed_bytes);
@@ -41,7 +42,7 @@ impl Dungeon {
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(1000, 2501);
+        let attempts = rng.gen_range(2000, 3501);
         let mut rooms: Vec<Room> = Vec::new();
 
         'insert: for _ in 0..attempts {
@@ -93,6 +94,7 @@ impl Dungeon {
 
             for r in &rooms {
                 if r.intersects(&room) {
+                    fails += 1;
                     continue 'insert;
                 }
             }
@@ -108,6 +110,8 @@ impl Dungeon {
 
         println!("{}", seed);
         println!("{}x{}", dw, dh);
+        println!("Attempts: {}", attempts);
+        println!("Failed attempts: {}", fails);
         println!("Small rooms: {}", small);
         println!("Medium rooms: {}", med);
         println!("Large rooms: {}\n", large);
