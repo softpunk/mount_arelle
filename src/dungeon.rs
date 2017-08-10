@@ -36,15 +36,12 @@ impl Dungeon {
             DungeonSize::Large => Range::new(75, 101),
         };
 
-        // let dw = dungeon_bounds.ind_sample(&mut rng);
-        // let dh = dungeon_bounds.ind_sample(&mut rng);
-
-        let dw = 1000;
-        let dh = 1000;
+        let dw = dungeon_bounds.ind_sample(&mut rng);
+        let dh = dungeon_bounds.ind_sample(&mut rng);
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(1000, 3001);
+        let attempts = rng.gen_range(15, 31);
         let mut rooms: Vec<Room> = Vec::new();
 
         'create_rooms: for _ in 0..attempts {
@@ -84,35 +81,29 @@ impl Dungeon {
             let rw = room_bounds.ind_sample(&mut rng);
             let rh = room_bounds.ind_sample(&mut rng);
 
-            'place_room: for _ in 0..20 {
-                let x_range = Range::new(rw / 2, dw - (rw / 2) + 1);
-                let y_range = Range::new(rh / 2, dh - (rh / 2) + 1);
+            let rx = rng.gen_range(rw / 2, dw - (rw / 2) + 1);
+            let ry = rng.gen_range(rh / 2, dh - (rh / 2) + 1);
 
-                let rx = x_range.ind_sample(&mut rng);
-                let ry = y_range.ind_sample(&mut rng);
+            let room = Room::new(
+                rx,
+                ry,
+                rw,
+                rh,
+            );
 
-                let room = Room::new(
-                    rx,
-                    ry,
-                    rw,
-                    rh,
-                );
-
-                for r in &rooms {
-                    if r.intersects(&room) {
-                        continue 'place_room;
-                    }
+            for r in &rooms {
+                if r.intersects(&room) {
+                    continue 'create_rooms;
                 }
-
-                match room_size {
-                    RoomSize::Small => small += 1,
-                    RoomSize::Med => med += 1,
-                    RoomSize::Large => large += 1,
-                }
-
-                rooms.push(room);
-                break 'place_room;
             }
+
+            match room_size {
+                RoomSize::Small => small += 1,
+                RoomSize::Med => med += 1,
+                RoomSize::Large => large += 1,
+            }
+
+            rooms.push(room);
         }
 
         println!("{}", seed);
@@ -184,6 +175,6 @@ impl Room {
 
     fn intersects(&self, other: &Room) -> bool {
         self.x1() <= other.x2() && self.x2() >= other.x1() &&
-            self.y1() <= other.y2() && other.y2() >= other.y1()
+            self.y1() <= other.y2() && self.y2() >= other.y1()
     }
 }

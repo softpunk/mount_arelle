@@ -90,8 +90,8 @@ impl Grid {
             }
         }
 
-        // let resized = image.resize(self.width * 5, self.height * 5, FilterType::Nearest);
-        image.to_rgba().save(path)
+        let resized = image.resize(self.width * 5, self.height * 5, FilterType::Nearest);
+        resized.to_rgba().save(path)
     }
 }
 
