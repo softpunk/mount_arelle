@@ -31,9 +31,9 @@ impl Dungeon {
         let dungeon_size = WeightedChoice::new(dungeon_sizes).ind_sample(&mut rng);
 
         let dungeon_bounds = match dungeon_size {
-            DungeonSize::Small => Range::new(30, 51),
-            DungeonSize::Med => Range::new(50, 76),
-            DungeonSize::Large => Range::new(75, 101),
+            DungeonSize::Small => Range::new(50, 81),
+            DungeonSize::Med => Range::new(80, 121),
+            DungeonSize::Large => Range::new(120, 151),
         };
 
         let dw = dungeon_bounds.ind_sample(&mut rng);
@@ -41,7 +41,20 @@ impl Dungeon {
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(15, 31);
+        let attempts = rng.gen_range(30, 101);
+
+        let max_rooms = match dungeon_size {
+            DungeonSize::Small => {
+                rng.gen_range(10, 21)
+            },
+            DungeonSize::Med => {
+                rng.gen_range(20, 30)
+            },
+            DungeonSize::Large => {
+                rng.gen_range(30, 40)
+            },
+        };
+
         let mut rooms: Vec<Room> = Vec::new();
 
         'create_rooms: for _ in 0..attempts {
@@ -66,7 +79,7 @@ impl Dungeon {
                     room_sizes = [
                         Weighted { weight: 200, item: RoomSize::Small },
                         Weighted { weight: 220, item: RoomSize::Med },
-                        Weighted { weight:  80, item: RoomSize::Large },
+                        Weighted { weight:  150, item: RoomSize::Large },
                     ];
                 },
             };
@@ -74,8 +87,8 @@ impl Dungeon {
             let room_size = WeightedChoice::new(&mut room_sizes).ind_sample(&mut rng);
             let room_bounds = match room_size {
                 RoomSize::Small => Range::new(5, 11),
-                RoomSize::Med => Range::new(10, 16),
-                RoomSize::Large => Range::new(15, 26),
+                RoomSize::Med => Range::new(10, 21),
+                RoomSize::Large => Range::new(20, 36),
             };
 
             let rw = room_bounds.ind_sample(&mut rng);
@@ -104,11 +117,15 @@ impl Dungeon {
             }
 
             rooms.push(room);
+            if rooms.len() == max_rooms {
+                break 'create_rooms;
+            }
         }
 
         println!("{}", seed);
         println!("{}x{}", dw, dh);
-        println!("Attempts: {}", attempts);
+        println!("Max rooms: {}", max_rooms);
+        println!("Actual rooms: {}", rooms.len());
         println!("Small rooms: {}", small);
         println!("Medium rooms: {}", med);
         println!("Large rooms: {}\n", large);
