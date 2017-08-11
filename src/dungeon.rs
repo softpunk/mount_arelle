@@ -41,17 +41,17 @@ impl Dungeon {
 
         let mut grid = Grid::new(dw, dh, Tile::Wall);
 
-        let attempts = rng.gen_range(30, 101);
+        let attempts = rng.gen_range(20, 041);
 
         let max_rooms = match dungeon_size {
             DungeonSize::Small => {
-                rng.gen_range(10, 21)
+                rng.gen_range(7, 11)
             },
             DungeonSize::Med => {
-                rng.gen_range(20, 30)
+                rng.gen_range(10, 21)
             },
             DungeonSize::Large => {
-                rng.gen_range(30, 40)
+                rng.gen_range(20, 40)
             },
         };
 
@@ -63,23 +63,23 @@ impl Dungeon {
             match dungeon_size {
                 DungeonSize::Small => {
                     room_sizes = [
-                        Weighted { weight: 200, item: RoomSize::Small },
-                        Weighted { weight: 150, item: RoomSize::Med },
+                        Weighted { weight: 100, item: RoomSize::Small },
+                        Weighted { weight: 200, item: RoomSize::Med },
                         Weighted { weight:   0, item: RoomSize::Large },
                     ];
                 },
                 DungeonSize::Med => {
                     room_sizes = [
-                        Weighted { weight: 200, item: RoomSize::Small },
-                        Weighted { weight: 200, item: RoomSize::Med },
+                        Weighted { weight: 100, item: RoomSize::Small },
+                        Weighted { weight: 250, item: RoomSize::Med },
                         Weighted { weight:  50, item: RoomSize::Large },
                     ];
                 },
                 DungeonSize::Large => {
                     room_sizes = [
-                        Weighted { weight: 200, item: RoomSize::Small },
-                        Weighted { weight: 220, item: RoomSize::Med },
-                        Weighted { weight:  150, item: RoomSize::Large },
+                        Weighted { weight: 100, item: RoomSize::Small },
+                        Weighted { weight: 250, item: RoomSize::Med },
+                        Weighted { weight:  100, item: RoomSize::Large },
                     ];
                 },
             };
@@ -87,15 +87,15 @@ impl Dungeon {
             let room_size = WeightedChoice::new(&mut room_sizes).ind_sample(&mut rng);
             let room_bounds = match room_size {
                 RoomSize::Small => Range::new(5, 11),
-                RoomSize::Med => Range::new(10, 21),
-                RoomSize::Large => Range::new(20, 36),
+                RoomSize::Med => Range::new(10, 15),
+                RoomSize::Large => Range::new(15, 21),
             };
 
             let rw = room_bounds.ind_sample(&mut rng);
             let rh = room_bounds.ind_sample(&mut rng);
 
-            let rx = rng.gen_range(rw / 2, dw - (rw / 2) + 1);
-            let ry = rng.gen_range(rh / 2, dh - (rh / 2) + 1);
+            let rx = rng.gen_range(0, dw - rw);
+            let ry = rng.gen_range(0, dh - rh);
 
             let room = Room::new(
                 rx,
@@ -130,11 +130,27 @@ impl Dungeon {
         println!("Medium rooms: {}", med);
         println!("Large rooms: {}\n", large);
 
-        for room in rooms {
+        for room in &rooms {
             for x in room.x1()..room.x2() {
                 for y in room.y1()..room.y2() {
                     grid[(x,y)] = Tile::Floor;
                 }
+            }
+        }
+
+        for (prev, room) in rooms.iter().skip(1).enumerate() {
+            let prev_room = &rooms[prev];
+
+            // Random coin flip?
+            match rng.gen::<bool>() {
+                true => {
+                    carve_h(&mut grid, prev_room.center_x(), room.center_x(), prev_room.center_y());
+                    carve_v(&mut grid, prev_room.center_y(), room.center_y(), room.center_x());
+                },
+                false => {
+                    carve_v(&mut grid, prev_room.center_y(), room.center_y(), prev_room.center_x());
+                    carve_h(&mut grid, prev_room.center_x(), room.center_x(), room.center_y());
+                },
             }
         }
 
@@ -145,6 +161,24 @@ impl Dungeon {
 
     pub fn render_grid<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         self.grid.render_image(path)
+    }
+}
+
+fn carve_h(grid: &mut Grid, x1: u32, x2: u32, y: u32) {
+    let lowest = if x1 < x2 { x1 } else { x2 };
+    let highest = if x1 > x2 { x1 } else { x2 };
+
+    for x in lowest..highest + 1 {
+        grid[(x, y)] = Tile::Floor;
+    }
+}
+
+fn carve_v(grid: &mut Grid, y1: u32, y2: u32, x: u32) {
+    let lowest = if y1 < y2 { y1 } else { y2 };
+    let highest = if y1 > y2 { y1 } else { y2 };
+
+    for y in lowest..highest + 1 {
+        grid[(x, y)] = Tile::Floor;
     }
 }
 
@@ -163,30 +197,38 @@ enum RoomSize {
 }
 
 struct Room {
-    x: u32, // X coordinate of center
-    y: u32, // Y coordinate of center
+    x: u32, // X coordinate of top-left
+    y: u32, // Y coordinate of top-right
     w: u32,
     h: u32,
 }
 
 impl Room {
-    pub fn new(x: u32, y: u32, w: u32, h: u32) -> Self {
+    fn new(x: u32, y: u32, w: u32, h: u32) -> Self {
         Room {x: x, y: y, w: w, h: h}
     }
 
-    pub fn x1(&self) -> u32 {
-        self.x - (self.w / 2)
+    fn x1(&self) -> u32 {
+        self.x
     }
 
-    pub fn x2(&self) -> u32 {
+    fn x2(&self) -> u32 {
+        self.x + self.w
+    }
+
+    fn y1(&self) -> u32 {
+        self.y
+    }
+
+    fn y2(&self) -> u32 {
+        self.y + self.h
+    }
+
+    fn center_x(&self) -> u32 {
         self.x + (self.w / 2)
     }
 
-    pub fn y1(&self) -> u32 {
-        self.y - (self.h / 2)
-    }
-
-    pub fn y2(&self) -> u32 {
+    fn center_y(&self) -> u32 {
         self.y + (self.h / 2)
     }
 
