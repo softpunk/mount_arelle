@@ -12,6 +12,7 @@ use grid::Tile;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
     grid: Grid,
+    player_spawn: (u32, u32),
 }
 
 impl Dungeon {
@@ -122,13 +123,13 @@ impl Dungeon {
             }
         }
 
-        println!("{}", seed);
-        println!("{}x{}", dw, dh);
-        println!("Max rooms: {}", max_rooms);
-        println!("Actual rooms: {}", rooms.len());
-        println!("Small rooms: {}", small);
-        println!("Medium rooms: {}", med);
-        println!("Large rooms: {}\n", large);
+        // println!("{}", seed);
+        // println!("{}x{}", dw, dh);
+        // println!("Max rooms: {}", max_rooms);
+        // println!("Actual rooms: {}", rooms.len());
+        // println!("Small rooms: {}", small);
+        // println!("Medium rooms: {}", med);
+        // println!("Large rooms: {}\n", large);
 
         for room in &rooms {
             for x in room.x1()..room.x2() {
@@ -156,6 +157,7 @@ impl Dungeon {
 
         Dungeon {
             grid: grid,
+            player_spawn: rng.choose(&rooms).unwrap().center(),
         }
     }
 
@@ -230,6 +232,10 @@ impl Room {
 
     fn center_y(&self) -> u32 {
         self.y + (self.h / 2)
+    }
+
+    fn center(&self) -> (u32, u32) {
+        (self.center_x(), self.center_y())
     }
 
     fn intersects(&self, other: &Room) -> bool {
