@@ -12,7 +12,7 @@ use grid::Tile;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
     grid: Grid,
-    player_spawn: (u32, u32),
+    player_spawn: (f64, f64),
 }
 
 impl Dungeon {
@@ -145,24 +145,50 @@ impl Dungeon {
             // Random coin flip?
             match rng.gen::<bool>() {
                 true => {
-                    carve_h(&mut grid, prev_room.center_x(), room.center_x(), prev_room.center_y());
-                    carve_v(&mut grid, prev_room.center_y(), room.center_y(), room.center_x());
+                    carve_h(
+                        &mut grid,
+                        prev_room.center_x() as u32,
+                        room.center_x() as u32,
+                        prev_room.center_y() as u32,
+                    );
+                    carve_v(
+                        &mut grid,
+                        prev_room.center_y() as u32,
+                        room.center_y() as u32,
+                        room.center_x() as u32,
+                    );
                 },
                 false => {
-                    carve_v(&mut grid, prev_room.center_y(), room.center_y(), prev_room.center_x());
-                    carve_h(&mut grid, prev_room.center_x(), room.center_x(), room.center_y());
+                    carve_v(
+                        &mut grid,
+                        prev_room.center_y() as u32,
+                        room.center_y() as u32,
+                        prev_room.center_x() as u32,
+                    );
+                    carve_h(
+                        &mut grid,
+                        prev_room.center_x() as u32,
+                        room.center_x() as u32,
+                        room.center_y() as u32,
+                    );
                 },
             }
         }
 
+        let (px, py) = rng.choose(&rooms).unwrap().center();
+
         Dungeon {
             grid: grid,
-            player_spawn: rng.choose(&rooms).unwrap().center(),
+            player_spawn: (px, py),
         }
     }
 
     pub fn render_grid<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         self.grid.render_image(path)
+    }
+
+    pub fn player_spawn(&self) -> (f64, f64) {
+        self.player_spawn
     }
 }
 
@@ -226,15 +252,15 @@ impl Room {
         self.y + self.h
     }
 
-    fn center_x(&self) -> u32 {
-        self.x + (self.w / 2)
+    fn center_x(&self) -> f64 {
+        self.x as f64 + (self.w as f64 / 2.0)
     }
 
-    fn center_y(&self) -> u32 {
-        self.y + (self.h / 2)
+    fn center_y(&self) -> f64 {
+        self.y as f64 + (self.h as f64 / 2.0)
     }
 
-    fn center(&self) -> (u32, u32) {
+    fn center(&self) -> (f64, f64) {
         (self.center_x(), self.center_y())
     }
 
