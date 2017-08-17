@@ -11,7 +11,7 @@ use grid::Tile;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dungeon {
-    grid: Grid,
+    pub grid: Grid,
     player_spawn: (f64, f64),
 }
 

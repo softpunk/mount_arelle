@@ -23,7 +23,7 @@ fn main() {
 
     let opengl = OpenGL::V3_2;
 
-    let mut window: PistonWindow = WindowSettings::new("Mount Arelle", (640, 480))
+    let mut window: PistonWindow = WindowSettings::new("Mount Arelle", (800, 600))
         .exit_on_esc(true)
         .opengl(opengl)
         .build()
@@ -31,7 +31,7 @@ fn main() {
 
     window.set_capture_cursor(true);
 
-    let mut gl = GlGraphics::new(opengl);
+    let mut glgraphics = GlGraphics::new(opengl);
     let mut game = Game::new(dungeon);
 
     let mut mouse_dx = 0.0;
@@ -85,7 +85,7 @@ fn main() {
                 game.update(args, mouse_dx, mouse_dy);
             },
             Input::Render(args) => {
-                game.render(args);
+                game.render(args, &mut glgraphics);
             },
             _ => {},
         }

@@ -93,6 +93,14 @@ impl Grid {
         let resized = image.resize(self.width * 5, self.height * 5, FilterType::Nearest);
         resized.to_rgba().save(path)
     }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
 }
 
 impl Index<(u32, u32)> for Grid {
