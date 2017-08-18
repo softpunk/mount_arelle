@@ -1,16 +1,8 @@
-// extern crate cgmath;
-// use cgmath::{Vector2, vec2};
-
 pub struct Player {
-    // pub pos: Vector2<f32>,
     pub x_pos: f64,
     pub y_pos: f64,
-    pub dir_x: f64,
-    pub dir_y: f64,
-    pub plane_x: f64,
-    pub plane_y: f64,
-    // pub angle: f64,
-    // pub fov: u32,
+    pub angle: f64,
+    pub fov: f64,
 }
 
 impl Player {
@@ -18,12 +10,21 @@ impl Player {
         Player {
             x_pos: x,
             y_pos: y,
-            dir_x: -1.0,
-            dir_y: 0.0,
-            plane_x: 0.0,
-            plane_y: 0.66,
-            // angle: 0.0,
-            // fov: 75,
+            angle: 0.0f64.to_radians(),
+            fov: 75.0f64.to_radians(),
         }
+    }
+
+    pub fn rotate(&mut self, degrees: f64) {
+        let delta = degrees % 360.0;
+        let mut new_degrees = self.angle.to_degrees() + delta;
+
+        if new_degrees < 0.0 {
+            new_degrees += 360.0;
+        } else if new_degrees >= 360.0 {
+            new_degrees -= 360.0;
+        }
+
+        self.angle = new_degrees.to_radians();
     }
 }
