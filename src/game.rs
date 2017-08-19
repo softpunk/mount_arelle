@@ -30,8 +30,8 @@ pub struct Game {
 }
 
 const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
-const DARK_RED: [f32; 4] = [0.5, 0.0, 0.0, 1.0];
+const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.0];
+const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.0];
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -50,8 +50,8 @@ impl Game {
         let screen_w = args.draw_width;
         let screen_h = args.draw_height;
 
-        let red = Rectangle::new(RED);
-        let dark_red = Rectangle::new(DARK_RED);
+        let lg_rect = Rectangle::new(LIGHT_GRAY);
+        let dg_rect = Rectangle::new(DARK_GRAY);
 
         gl.draw(args.viewport(), |c, gl| {
             clear(BLACK, gl);
@@ -176,9 +176,9 @@ impl Game {
             gl.draw(args.viewport(), |c, gl| {
                 let rect = [x as f64, line_bottom as f64, 1.0, line_height as f64];
                 if cell_edge {
-                    &red.draw(rect, &c.draw_state, c.transform, gl);
+                    &lg_rect.draw(rect, &c.draw_state, c.transform, gl);
                 } else {
-                    &dark_red.draw(rect, &c.draw_state, c.transform, gl);
+                    &dg_rect.draw(rect, &c.draw_state, c.transform, gl);
                 }
             });
         }
