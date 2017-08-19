@@ -1,13 +1,20 @@
 extern crate piston_window;
-use piston_window::PistonWindow;
+use piston_window::{PistonWindow, Texture, TextureSettings};
 
 extern crate opengl_graphics;
 use opengl_graphics::GlGraphics;
+
+extern crate gfx_device_gl;
+use gfx_device_gl::Factory;
 
 extern crate graphics;
 use graphics::{Graphics, clear};
 use graphics::rectangle::Rectangle;
 use graphics::math::identity;
+use graphics::image::Image;
+
+extern crate image;
+use image::ImageBuffer;
 
 extern crate input;
 use input::{Input, RenderArgs, UpdateArgs, Button};
@@ -30,8 +37,8 @@ pub struct Game {
 }
 
 const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
-const DARK_RED: [f32; 4] = [0.5, 0.0, 0.0, 1.0];
+const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.0];
+const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.0];
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -46,16 +53,14 @@ impl Game {
         }
     }
 
-    pub fn render(&mut self, args: RenderArgs, gl: &mut GlGraphics) {
+    pub fn render(&mut self, args: RenderArgs, gl: &mut GlGraphics, factory: &mut Factory) {
         let screen_w = args.draw_width;
         let screen_h = args.draw_height;
 
-        let red = Rectangle::new(RED);
-        let dark_red = Rectangle::new(DARK_RED);
+        let mut canvas = ImageBuffer::new(screen_w, screen_h);
 
-        gl.draw(args.viewport(), |c, gl| {
-            clear(BLACK, gl);
-        });
+        let lg_rect = Rectangle::new(LIGHT_GRAY);
+        let dg_rect = Rectangle::new(DARK_GRAY);
 
         for x in 0..screen_w {
             let ray_screen_x = x as f64 - screen_w as f64 / 2.0;
@@ -172,16 +177,20 @@ impl Game {
 
             let line_height: i32 = (proj_dist / actual_distance) as i32;
             let line_bottom: i32 = (screen_h as i32 / 2) - (line_height / 2);
-
-            gl.draw(args.viewport(), |c, gl| {
-                let rect = [x as f64, line_bottom as f64, 1.0, line_height as f64];
-                if cell_edge {
-                    &red.draw(rect, &c.draw_state, c.transform, gl);
-                } else {
-                    &dark_red.draw(rect, &c.draw_state, c.transform, gl);
-                }
-            });
         }
+
+        let image = Image::new();
+        let mut texture = Texture::from_image(factory, &canvas, &TextureSettings::new()).unwrap();
+
+        gl.draw(args.viewport(), |c, gl| {
+            clear(BLACK, gl);
+            image.draw(
+                &texture,
+                &c.draw_state,
+                c.transform,
+                gl,
+            );
+        });
     }
 
     pub fn update(&mut self, args: UpdateArgs, mdx: f64, mdy: f64) {
@@ -196,12 +205,12 @@ impl Game {
             new_y = self.player.y_pos - (2.0 * dt);
         }
         if self.left {
-            self.player.rotate(-20.0 * dt);
+            self.player.rotate(-50.0 * dt);
             // new_x = self.player.x_pos - (2.0 * dt);
         }
         if self.right {
-            self.player.rotate(20.0 * dt);
-            new_x = self.player.x_pos + (2.0 * dt);
+            self.player.rotate(50.0 * dt);
+            // new_x = self.player.x_pos + (2.0 * dt);
         }
 
         // if new_x < 0.0 {

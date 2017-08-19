@@ -1,5 +1,5 @@
 extern crate piston_window;
-use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings};
+use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings, EventLoop};
 
 extern crate window;
 // use window::AdvancedWindow;
@@ -30,6 +30,7 @@ fn main() {
         .unwrap_or_else(|e| { panic!("Failed to build PistonWindow: {}", e) });
 
     window.set_capture_cursor(true);
+    window.set_max_fps(60);
 
     let mut glgraphics = GlGraphics::new(opengl);
     let mut game = Game::new(dungeon);
@@ -85,7 +86,7 @@ fn main() {
                 game.update(args, mouse_dx, mouse_dy);
             },
             Input::Render(args) => {
-                game.render(args, &mut glgraphics);
+                game.render(args, &mut glgraphics, &mut window.factory);
             },
             _ => {},
         }

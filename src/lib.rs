@@ -7,10 +7,10 @@ extern crate input;
 extern crate opengl_graphics;
 extern crate window;
 extern crate graphics;
-
 extern crate rand;
 extern crate image;
 extern crate cgmath;
+extern crate gfx_device_gl;
 
 pub mod dungeon;
 pub mod grid;
