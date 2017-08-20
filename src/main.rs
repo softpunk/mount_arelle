@@ -1,17 +1,7 @@
 extern crate ggez;
-
-extern crate piston_window;
-use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings};
-
-extern crate window;
-// use window::AdvancedWindow;
-
-extern crate input;
-use input::{Input, RenderArgs, UpdateArgs, Button, Motion};
-use input::keyboard::Key;
-
-extern crate opengl_graphics;
-use opengl_graphics::GlGraphics;
+use ggez::{Context, event};
+use ggez::graphics::{self, Color, FullscreenType};
+use ggez::conf::Conf;
 
 use std::env::args;
 
@@ -23,32 +13,21 @@ fn main() {
     let seed = args().nth(1).expect("No seed specified");
     let dungeon = Dungeon::new_from_seed(&seed);
 
-    let opengl = OpenGL::V3_2;
-
-    let mut window: PistonWindow = WindowSettings::new("Mount Arelle", (800, 600))
-        .exit_on_esc(true)
-        .opengl(opengl)
-        .build()
-        .unwrap_or_else(|e| { panic!("Failed to build PistonWindow: {}", e) });
-
-    window.set_capture_cursor(true);
-
-    let mut glgraphics = GlGraphics::new(opengl);
     let mut game = Game::new(dungeon);
 
-    let mut mouse_dx = 0.0;
-    let mut mouse_dy = 0.0;
+    let config = Conf {
+        window_title: "Mt. Arelle".to_string(),
+        window_icon: "".to_string(),
+        window_width: 800,
+        window_height: 600,
+        vsync: true,
+        resizable: true,
+    };
 
-    while let Some(event) = window.next() {
-        match event {
-            Input::Move(Motion::MouseRelative(x, y)) => {
-                mouse_dx = x;
-                mouse_dy = y;
-            },
-            Input::Render(args) => {
-                game.render(args, &mut glgraphics);
-            },
-            _ => {},
-        }
-    }
+    let mut ctx = Context::load_from_conf("mtrl", "sector-f", config).unwrap();
+    graphics::set_background_color(&mut ctx, Color::new(0.0, 0.0, 0.0, 1.0));
+
+    &ctx.sdl_context.mouse().set_relative_mouse_mode(true);
+
+    event::run(&mut ctx, &mut game).unwrap();
 }

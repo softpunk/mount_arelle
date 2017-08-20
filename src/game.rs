@@ -1,22 +1,10 @@
-extern crate piston_window;
-use piston_window::PistonWindow;
-
-extern crate opengl_graphics;
-use opengl_graphics::GlGraphics;
-
-extern crate graphics;
-use graphics::{Graphics, clear};
-use graphics::rectangle::Rectangle;
-use graphics::math::identity;
-
 extern crate ggez;
-use ggez::event::{EventHandler, Keycode, Mod};
-use ggez::Context;
+use ggez::{Context, timer};
+use ggez::graphics::{self, Rect, Color, DrawMode};
+use ggez::event::{EventHandler, Keycode, Mod, MouseState};
 use ggez::error::GameResult;
-use ggez::timer;
 
-extern crate input;
-use input::{Input, RenderArgs, UpdateArgs, Button};
+// extern crate sdl2;
 
 use std::f64;
 use std::time::Duration;
@@ -36,9 +24,9 @@ pub struct Game {
     pub right: bool,
 }
 
-const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.0];
-const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.0];
+const BLACK: Color = Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
+const LIGHT_GRAY: Color = Color { r: 0.7, g: 0.7, b: 0.7, a: 1.0 };
+const DARK_GRAY: Color = Color { r: 0.4, g: 0.4, b: 0.4, a: 1.0 };
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -52,17 +40,70 @@ impl Game {
             right: false,
         }
     }
+}
 
-    pub fn render(&mut self, args: RenderArgs, gl: &mut GlGraphics) {
-        let screen_w = args.draw_width;
-        let screen_h = args.draw_height;
+impl EventHandler for Game {
+    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
+        let dt = timer::duration_to_f64(dt);
 
-        let lg_rect = Rectangle::new(LIGHT_GRAY);
-        let dg_rect = Rectangle::new(DARK_GRAY);
+        let mut new_x = self.player.x_pos;
+        let mut new_y = self.player.y_pos;
 
-        gl.draw(args.viewport(), |c, gl| {
-            clear(BLACK, gl);
-        });
+        if self.forward {
+            new_y = self.player.y_pos + (3.0 * dt);
+        }
+        if self.back {
+            new_y = self.player.y_pos - (3.0 * dt);
+        }
+        if self.left {
+            new_x = self.player.x_pos + (3.0 * dt);
+        }
+        if self.right {
+            new_x = self.player.x_pos - (3.0 * dt);
+        }
+
+        if new_x < 0.0 {
+            new_x = 0.0;
+        }
+        if new_x > self.dungeon.grid.width() as f64 {
+            new_x = self.dungeon.grid.width() as f64;
+        }
+
+        if new_y < 0.0 {
+            new_y = 0.0;
+        }
+        if new_y > self.dungeon.grid.height() as f64 {
+            new_y = self.dungeon.grid.height() as f64;
+        }
+
+        self.player.x_pos = new_x;
+        self.player.y_pos = new_y;
+
+        // self.player.rotate(mdx * dt);
+
+        Ok(())
+    }
+
+    fn draw(&mut self, mut ctx: &mut Context) -> GameResult<()> {
+        let screen_w: u32;
+        let screen_h: u32;
+
+        {
+            let window = ctx.gfx_context.get_window();
+            let (w, h) = window.drawable_size();
+            screen_w = w;
+            screen_h = h;
+        }
+
+        graphics::clear(ctx);
+        let buffer = vec![0; (screen_h * screen_w) as usize];
+
+        let mut image = graphics::Image::from_rgba8(
+            ctx,
+            screen_w as u16,
+            screen_h as u16,
+            &buffer,
+        );
 
         for x in 0..screen_w {
             let ray_screen_x = x as f64 - screen_w as f64 / 2.0;
@@ -180,63 +221,22 @@ impl Game {
             let line_height: i32 = (proj_dist / actual_distance) as i32;
             let line_bottom: i32 = (screen_h as i32 / 2) - (line_height / 2);
 
-            gl.draw(args.viewport(), |c, gl| {
-                let rect = [x as f64, line_bottom as f64, 1.0, line_height as f64];
-                if cell_edge {
-                    &lg_rect.draw(rect, &c.draw_state, c.transform, gl);
-                } else {
-                    &dg_rect.draw(rect, &c.draw_state, c.transform, gl);
-                }
-            });
+            let rect = Rect {
+                x: x as f32,
+                y: (line_bottom + (line_height / 2)) as f32,
+                w: 1.0,
+                h: line_height as f32,
+            };
+
+            if cell_edge {
+                graphics::set_color(ctx, LIGHT_GRAY);
+            } else {
+                graphics::set_color(ctx, DARK_GRAY);
+            }
+            graphics::rectangle(&mut ctx, DrawMode::Fill, rect);
         }
-    }
-}
+        graphics::present(&mut ctx);
 
-impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
-        let dt = timer::duration_to_f64(dt);
-
-        let mut new_x = self.player.x_pos;
-        let mut new_y = self.player.y_pos;
-
-        if self.forward {
-            new_y = self.player.y_pos + (2.0 * dt);
-        }
-        if self.back {
-            new_y = self.player.y_pos - (2.0 * dt);
-        }
-        if self.left {
-            self.player.rotate(-20.0 * dt);
-            // new_x = self.player.x_pos - (2.0 * dt);
-        }
-        if self.right {
-            self.player.rotate(20.0 * dt);
-            new_x = self.player.x_pos + (2.0 * dt);
-        }
-
-        // if new_x < 0.0 {
-        //     new_x = 0.0;
-        // }
-        // if new_x > self.dungeon.grid.width() as f64 {
-        //     new_x = self.dungeon.grid.width() as f64;
-        // }
-
-        // if new_y < 0.0 {
-        //     new_y = 0.0;
-        // }
-        // if new_y > self.dungeon.grid.height() as f64 {
-        //     new_y = self.dungeon.grid.height() as f64;
-        // }
-
-        // self.player.x_pos = new_x;
-        // self.player.y_pos = new_y;
-
-        // self.player.rotate(mdx * dt);
-
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         Ok(())
     }
 
@@ -274,6 +274,17 @@ impl EventHandler for Game {
             },
             _ => {},
         }
+    }
+
+    fn mouse_motion_event(
+        &mut self,
+        _state: MouseState,
+        _x: i32,
+        _y: i32,
+        xrel: i32,
+        _yrel: i32,
+    ) {
+        self.player.rotate(xrel as f64 * 0.5);
     }
 }
 
