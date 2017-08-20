@@ -1,3 +1,5 @@
+extern crate ggez;
+
 extern crate piston_window;
 use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings};
 
@@ -39,50 +41,9 @@ fn main() {
 
     while let Some(event) = window.next() {
         match event {
-            Input::Press(button) => {
-                match button {
-                    Button::Keyboard(Key::W) => {
-                        game.forward = true;
-                        game.back = false;
-                    },
-                    Button::Keyboard(Key::S) => {
-                        game.back = true;
-                        game.forward = false;
-                    },
-                    Button::Keyboard(Key::A) => {
-                        game.left = true;
-                        game.right = false;
-                    },
-                    Button::Keyboard(Key::D) => {
-                        game.right = true;
-                        game.left = false;
-                    },
-                    _ => {},
-                }
-            },
-            Input::Release(button) => {
-                match button {
-                    Button::Keyboard(Key::W) => {
-                        game.forward = false;
-                    },
-                    Button::Keyboard(Key::S) => {
-                        game.back = false;
-                    },
-                    Button::Keyboard(Key::A) => {
-                        game.left = false;
-                    },
-                    Button::Keyboard(Key::D) => {
-                        game.right = false;
-                    },
-                    _ => {},
-                }
-            },
             Input::Move(Motion::MouseRelative(x, y)) => {
                 mouse_dx = x;
                 mouse_dy = y;
-            },
-            Input::Update(args) => {
-                game.update(args, mouse_dx, mouse_dy);
             },
             Input::Render(args) => {
                 game.render(args, &mut glgraphics);

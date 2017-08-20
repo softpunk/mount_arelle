@@ -9,10 +9,17 @@ use graphics::{Graphics, clear};
 use graphics::rectangle::Rectangle;
 use graphics::math::identity;
 
+extern crate ggez;
+use ggez::event::{EventHandler, Keycode, Mod};
+use ggez::Context;
+use ggez::error::GameResult;
+use ggez::timer;
+
 extern crate input;
 use input::{Input, RenderArgs, UpdateArgs, Button};
 
 use std::f64;
+use std::time::Duration;
 
 use dungeon::Dungeon;
 use grid::Tile;
@@ -183,9 +190,12 @@ impl Game {
             });
         }
     }
+}
 
-    pub fn update(&mut self, args: UpdateArgs, mdx: f64, mdy: f64) {
-        let dt = args.dt;
+impl EventHandler for Game {
+    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
+        let dt = timer::duration_to_f64(dt);
+
         let mut new_x = self.player.x_pos;
         let mut new_y = self.player.y_pos;
 
@@ -222,6 +232,48 @@ impl Game {
         // self.player.y_pos = new_y;
 
         // self.player.rotate(mdx * dt);
+
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        Ok(())
+    }
+
+    fn key_down_event(&mut self, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        match keycode {
+            Keycode::W => {
+                self.forward = true;
+            },
+            Keycode::A => {
+                self.left = true;
+            },
+            Keycode::S => {
+                self.back = true;
+            },
+            Keycode::D => {
+                self.right = true;
+            },
+            _ => {},
+        }
+    }
+
+    fn key_up_event(&mut self, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        match keycode {
+            Keycode::W => {
+                self.forward = false;
+            },
+            Keycode::A => {
+                self.left = false;
+            },
+            Keycode::S => {
+                self.back = false;
+            },
+            Keycode::D => {
+                self.right = false;
+            },
+            _ => {},
+        }
     }
 }
 

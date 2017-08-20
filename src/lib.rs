@@ -8,6 +8,8 @@ extern crate opengl_graphics;
 extern crate window;
 extern crate graphics;
 
+extern crate ggez;
+
 extern crate rand;
 extern crate image;
 extern crate cgmath;
