@@ -6,10 +6,8 @@ authors = ["Adam <adamsimeth@gmail.com>"]
 [dependencies]
 rand = "0.3.16"
 image = "0.15.0"
-# cgmath = "0.15.0"
 
 ggez = "0.3.3"
-# sdl2 = "0.29.1"
 
 serde = "1.0.11"
 serde_derive = "1.0"

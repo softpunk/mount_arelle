@@ -7,8 +7,6 @@ use ggez::error::GameResult;
 extern crate image;
 use image::{Rgba, RgbaImage};
 
-// extern crate sdl2;
-
 use std::f64;
 use std::time::Duration;
 
@@ -52,17 +50,25 @@ impl EventHandler for Game {
         let mut new_x = self.player.x_pos;
         let mut new_y = self.player.y_pos;
 
+        // ToDo: Make these add right so that movement
+        // isn't faster when going diagonally
+
         if self.forward {
-            new_y = self.player.y_pos + (3.0 * dt);
+            new_y += (3.0 * dt) * self.player.angle.sin();
+            new_x += (3.0 * dt) * self.player.angle.cos();
         }
         if self.back {
-            new_y = self.player.y_pos - (3.0 * dt);
+            new_y -= (3.0 * dt) * self.player.angle.sin();
+            new_x -= (3.0 * dt) * self.player.angle.cos();
         }
+
         if self.left {
-            new_x = self.player.x_pos + (3.0 * dt);
+            new_y -= (3.0 * dt) * self.player.angle.cos();
+            new_x += (3.0 * dt) * self.player.angle.sin();
         }
         if self.right {
-            new_x = self.player.x_pos - (3.0 * dt);
+            new_y += (3.0 * dt) * self.player.angle.cos();
+            new_x -= (3.0 * dt) * self.player.angle.sin();
         }
 
         if new_x < 0.0 {
@@ -81,8 +87,6 @@ impl EventHandler for Game {
 
         self.player.x_pos = new_x;
         self.player.y_pos = new_y;
-
-        // self.player.rotate(mdx * dt);
 
         Ok(())
     }

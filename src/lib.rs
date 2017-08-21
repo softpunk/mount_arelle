@@ -3,11 +3,9 @@ extern crate serde;
 extern crate serde_json;
 
 extern crate ggez;
-// extern crate sdl2;
 
 extern crate rand;
 extern crate image;
-// extern crate cgmath;
 
 pub mod dungeon;
 pub mod grid;
