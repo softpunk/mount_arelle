@@ -28,6 +28,7 @@ pub struct Game {
 const BLACK: [f32; 4] = [0., 0., 0., 1.];
 const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.];
 const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.];
+const FPS: u32 = 60;
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -49,9 +50,6 @@ impl EventHandler for Game {
 
         let mut new_x = self.player.x_pos;
         let mut new_y = self.player.y_pos;
-
-        // ToDo: Make these add right so that movement
-        // isn't faster when going diagonally
 
         if self.forward {
             new_y += (3.0 * dt) * self.player.angle.sin();
@@ -87,6 +85,8 @@ impl EventHandler for Game {
 
         self.player.x_pos = new_x;
         self.player.y_pos = new_y;
+
+        timer::sleep_until_next_frame(&ctx, FPS);
 
         Ok(())
     }
