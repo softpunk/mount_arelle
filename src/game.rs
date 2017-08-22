@@ -2,7 +2,7 @@ extern crate piston_window;
 use piston_window::{PistonWindow, Texture, TextureSettings};
 
 extern crate opengl_graphics;
-use opengl_graphics::GlGraphics;
+use opengl_graphics::{GlGraphics, Texture as GlTex};
 
 extern crate gfx_device_gl;
 use gfx_device_gl::Factory;
@@ -14,7 +14,7 @@ use graphics::math::identity;
 use graphics::image::Image;
 
 extern crate image;
-use image::ImageBuffer;
+use image::{RgbaImage, Rgba};
 
 extern crate input;
 use input::{Input, RenderArgs, UpdateArgs, Button};
@@ -36,9 +36,9 @@ pub struct Game {
     pub right: bool,
 }
 
-const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.0];
-const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.0];
+const BLACK: [u8; 4] = [0, 0, 0, 255];
+const LIGHT_GRAY: [u8; 4] = [180, 180, 180, 255];
+const DARK_GRAY: [u8; 4] = [100, 100, 100, 255];
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -57,10 +57,7 @@ impl Game {
         let screen_w = args.draw_width;
         let screen_h = args.draw_height;
 
-        let mut canvas = ImageBuffer::new(screen_w, screen_h);
-
-        let lg_rect = Rectangle::new(LIGHT_GRAY);
-        let dg_rect = Rectangle::new(DARK_GRAY);
+        let mut buffer = RgbaImage::new(screen_w, screen_h);
 
         for x in 0..screen_w {
             let ray_screen_x = x as f64 - screen_w as f64 / 2.0;
@@ -174,16 +171,34 @@ impl Game {
 
             let actual_distance = int_dist.sqrt() * (self.player.angle - ray_angle).cos();
 
+            let mut line_height: i32 = (proj_dist / actual_distance) as i32;
+            let mut line_bottom: i32 = (screen_h as i32 / 2) - (line_height / 2);
+            let mut line_top: i32 = line_bottom + line_height;
 
-            let line_height: i32 = (proj_dist / actual_distance) as i32;
-            let line_bottom: i32 = (screen_h as i32 / 2) - (line_height / 2);
+            if line_bottom < 0 { line_bottom = 0 };
+            if line_top > screen_h as i32 {
+                line_top = screen_h as i32;
+            }
+
+            let color;
+            if cell_edge {
+                color = Rgba { data: LIGHT_GRAY };
+            } else {
+                color = Rgba { data: DARK_GRAY };
+            }
+
+            for y in line_bottom..line_top {
+                buffer.put_pixel(x, y as u32, color);
+            }
         }
 
         let image = Image::new();
-        let mut texture = Texture::from_image(factory, &canvas, &TextureSettings::new()).unwrap();
+
+
+        let texture = GlTex::from_image(&buffer, &TextureSettings::new());
 
         gl.draw(args.viewport(), |c, gl| {
-            clear(BLACK, gl);
+            clear([0.0, 0.0, 0.0, 1.0], gl);
             image.draw(
                 &texture,
                 &c.draw_state,
