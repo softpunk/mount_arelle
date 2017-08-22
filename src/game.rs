@@ -1,6 +1,6 @@
 extern crate ggez;
 use ggez::{Context, timer};
-use ggez::graphics::{self, Rect, Color, DrawMode};
+use ggez::graphics::{self, Point, Rect, Color, DrawMode};
 use ggez::event::{EventHandler, Keycode, Mod, MouseState};
 use ggez::error::GameResult;
 
@@ -25,9 +25,9 @@ pub struct Game {
     pub right: bool,
 }
 
-const BLACK: [u8; 4] = [0, 0, 0, 255];
-const LIGHT_GRAY: [u8; 4] = [180, 180, 180, 255];
-const DARK_GRAY: [u8; 4] = [100, 100, 100, 255];
+const BLACK: [f32; 4] = [0., 0., 0., 1.];
+const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.];
+const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.];
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -102,7 +102,7 @@ impl EventHandler for Game {
             screen_h = h;
         }
 
-        let mut buffer = RgbaImage::new(screen_w, screen_h);
+        graphics::clear(ctx);
 
         for x in 0..screen_w {
             let ray_screen_x = x as f64 - screen_w as f64 / 2.0;
@@ -216,42 +216,27 @@ impl EventHandler for Game {
 
             let actual_distance = int_dist.sqrt() * (self.player.angle - ray_angle).cos();
 
-            let mut line_height: i32 = (proj_dist / actual_distance) as i32;
-            let mut line_bottom: i32 = (screen_h as i32 / 2) - (line_height / 2);
-            let mut line_top: i32 = line_bottom + line_height;
+            let mut line_height = (proj_dist / actual_distance) as f32;
+            let mut line_bottom = (screen_h as f32 / 2.0_f32) - (line_height / 2.0_f32);
+            let mut line_top = line_bottom + line_height;
 
-            if line_bottom < 0 { line_bottom = 0 };
-            if line_top > screen_h as i32 {
-                line_top = screen_h as i32;
+            if line_bottom < 0. { line_bottom = 0. };
+            if line_top > screen_h as f32 {
+                line_top = screen_h as f32;
             }
 
-            let color;
-            if cell_edge {
-                color = Rgba { data: LIGHT_GRAY };
+            let _ = if cell_edge {
+                graphics::set_color(&mut ctx, LIGHT_GRAY.into())
             } else {
-                color = Rgba { data: DARK_GRAY };
-            }
+                graphics::set_color(&mut ctx, DARK_GRAY.into())
+            };
 
-            for y in line_bottom..line_top {
-                buffer.put_pixel(x, y as u32, color);
-            }
+            let _ = graphics::line(&mut ctx, &[
+                Point::new(x as f32, line_top as f32),
+                Point::new(x as f32, line_bottom as f32)
+            ]);
         }
 
-        graphics::clear(ctx);
-
-        let mut image = graphics::Image::from_rgba8(
-            ctx,
-            screen_w as u16,
-            screen_h as u16,
-            &buffer,
-        ).unwrap();
-
-        graphics::draw(
-            ctx,
-            &image,
-            [screen_w as f32 / 2.0, screen_h as f32 / 2.0].into(),
-            0.0,
-        );
         graphics::present(&mut ctx);
 
         Ok(())
