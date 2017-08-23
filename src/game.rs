@@ -208,44 +208,48 @@ impl Game {
         });
     }
 
-    pub fn update(&mut self, args: UpdateArgs, mdx: f64, mdy: f64) {
+    pub fn update(&mut self, args: UpdateArgs, mdx: f64, _mdy: f64) {
         let dt = args.dt;
+
         let mut new_x = self.player.x_pos;
         let mut new_y = self.player.y_pos;
 
         if self.forward {
-            new_y = self.player.y_pos + (2.0 * dt);
+            new_y += (3.0 * dt) * self.player.angle.sin();
+            new_x += (3.0 * dt) * self.player.angle.cos();
         }
         if self.back {
-            new_y = self.player.y_pos - (2.0 * dt);
+            new_y -= (3.0 * dt) * self.player.angle.sin();
+            new_x -= (3.0 * dt) * self.player.angle.cos();
         }
+
         if self.left {
-            self.player.rotate(-50.0 * dt);
-            // new_x = self.player.x_pos - (2.0 * dt);
+            new_y -= (3.0 * dt) * self.player.angle.cos();
+            new_x += (3.0 * dt) * self.player.angle.sin();
         }
         if self.right {
-            self.player.rotate(50.0 * dt);
-            // new_x = self.player.x_pos + (2.0 * dt);
+            new_y += (3.0 * dt) * self.player.angle.cos();
+            new_x -= (3.0 * dt) * self.player.angle.sin();
         }
 
-        // if new_x < 0.0 {
-        //     new_x = 0.0;
-        // }
-        // if new_x > self.dungeon.grid.width() as f64 {
-        //     new_x = self.dungeon.grid.width() as f64;
-        // }
+        if new_x < 0.0 {
+            new_x = 0.0;
+        }
+        if new_x > self.dungeon.grid.width() as f64 {
+            new_x = self.dungeon.grid.width() as f64;
+        }
 
-        // if new_y < 0.0 {
-        //     new_y = 0.0;
-        // }
-        // if new_y > self.dungeon.grid.height() as f64 {
-        //     new_y = self.dungeon.grid.height() as f64;
-        // }
+        if new_y < 0.0 {
+            new_y = 0.0;
+        }
+        if new_y > self.dungeon.grid.height() as f64 {
+            new_y = self.dungeon.grid.height() as f64;
+        }
 
-        // self.player.x_pos = new_x;
-        // self.player.y_pos = new_y;
+        self.player.x_pos = new_x;
+        self.player.y_pos = new_y;
 
-        // self.player.rotate(mdx * dt);
+        self.player.rotate(mdx as f64 * 13.0 * dt);
     }
 }
 

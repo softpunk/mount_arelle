@@ -1,8 +1,8 @@
 extern crate piston_window;
 use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings, EventLoop};
 
-extern crate window;
-// use window::AdvancedWindow;
+extern crate sdl2_window;
+use sdl2_window::Sdl2Window;
 
 extern crate input;
 use input::{Input, RenderArgs, UpdateArgs, Button, Motion};
@@ -23,7 +23,7 @@ fn main() {
 
     let opengl = OpenGL::V3_2;
 
-    let mut window: PistonWindow = WindowSettings::new("Mount Arelle", (800, 600))
+    let mut window: PistonWindow<Sdl2Window> = WindowSettings::new("Mount Arelle", (800, 600))
         .exit_on_esc(true)
         .opengl(opengl)
         .build()
@@ -79,11 +79,14 @@ fn main() {
                 }
             },
             Input::Move(Motion::MouseRelative(x, y)) => {
+                println!("{} {}", x, y);
                 mouse_dx = x;
                 mouse_dy = y;
             },
             Input::Update(args) => {
                 game.update(args, mouse_dx, mouse_dy);
+                mouse_dx = 0.0;
+                mouse_dy = 0.0;
             },
             Input::Render(args) => {
                 game.render(args, &mut glgraphics, &mut window.factory);
