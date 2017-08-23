@@ -1,15 +1,19 @@
 extern crate piston_window;
-use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings, EventLoop};
+use piston_window::{AdvancedWindow, PistonWindow, OpenGL, WindowSettings, EventLoop, TextureSettings};
+
+extern crate opengl_graphics;
+use opengl_graphics::{GlGraphics, Texture};
 
 extern crate sdl2_window;
 use sdl2_window::Sdl2Window;
 
 extern crate input;
-use input::{Input, RenderArgs, UpdateArgs, Button, Motion};
+use input::{Input, Button, Motion};
 use input::keyboard::Key;
 
-extern crate opengl_graphics;
-use opengl_graphics::GlGraphics;
+extern crate graphics;
+use graphics::clear;
+use graphics::image::Image;
 
 use std::env::args;
 
@@ -88,7 +92,18 @@ fn main() {
                 mouse_dy = 0.0;
             },
             Input::Render(args) => {
-                game.render(args, &mut glgraphics, &mut window.factory);
+                let frame = game.render_frame(args);
+                let image = Image::new();
+                let texture = Texture::from_image(&frame, &TextureSettings::new());
+                glgraphics.draw(args.viewport(), |c, gl| {
+                    clear([0.0, 0.0, 0.0, 1.0], gl);
+                    image.draw(
+                        &texture,
+                        &c.draw_state,
+                        c.transform,
+                        gl,
+                    );
+                });
             },
             _ => {},
         }

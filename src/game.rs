@@ -1,18 +1,3 @@
-extern crate piston_window;
-use piston_window::{PistonWindow, Texture, TextureSettings};
-
-extern crate opengl_graphics;
-use opengl_graphics::{GlGraphics, Texture as GlTex};
-
-extern crate gfx_device_gl;
-use gfx_device_gl::Factory;
-
-extern crate graphics;
-use graphics::{Graphics, clear};
-use graphics::rectangle::Rectangle;
-use graphics::math::identity;
-use graphics::image::Image;
-
 extern crate image;
 use image::{RgbaImage, Rgba};
 
@@ -53,7 +38,7 @@ impl Game {
         }
     }
 
-    pub fn render(&mut self, args: RenderArgs, gl: &mut GlGraphics, factory: &mut Factory) {
+    pub fn render_frame(&mut self, args: RenderArgs) -> RgbaImage {
         let screen_w = args.draw_width;
         let screen_h = args.draw_height;
 
@@ -192,20 +177,7 @@ impl Game {
             }
         }
 
-        let image = Image::new();
-
-
-        let texture = GlTex::from_image(&buffer, &TextureSettings::new());
-
-        gl.draw(args.viewport(), |c, gl| {
-            clear([0.0, 0.0, 0.0, 1.0], gl);
-            image.draw(
-                &texture,
-                &c.draw_state,
-                c.transform,
-                gl,
-            );
-        });
+        buffer
     }
 
     pub fn update(&mut self, args: UpdateArgs, mdx: f64, _mdy: f64) {
