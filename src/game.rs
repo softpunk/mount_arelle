@@ -249,7 +249,7 @@ impl Game {
         self.player.x_pos = new_x;
         self.player.y_pos = new_y;
 
-        self.player.rotate(mdx as f64 * 13.0 * dt);
+        self.player.rotate(mdx as f64 * 18.0 * dt);
     }
 }
 

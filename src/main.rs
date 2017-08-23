@@ -79,7 +79,6 @@ fn main() {
                 }
             },
             Input::Move(Motion::MouseRelative(x, y)) => {
-                println!("{} {}", x, y);
                 mouse_dx = x;
                 mouse_dy = y;
             },
