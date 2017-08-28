@@ -25,9 +25,9 @@ pub struct Game {
     pub right: bool,
 }
 
-const BLACK: [f32; 4] = [0., 0., 0., 1.];
-const LIGHT_GRAY: [f32; 4] = [0.7, 0.7, 0.7, 1.];
-const DARK_GRAY: [f32; 4] = [0.4, 0.4, 0.4, 1.];
+const BLACK: [u8; 4] = [0, 0, 0, 255];
+const LIGHT_GRAY: [u8; 4] = [180, 180, 180, 255];
+const DARK_GRAY: [u8; 4] = [100, 100, 100, 255];
 const FPS: u32 = 60;
 
 impl Game {
@@ -42,67 +42,68 @@ impl Game {
             right: false,
         }
     }
-}
 
-impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
-        let dt = timer::duration_to_f64(dt);
-
-        let mut new_x = self.player.x_pos;
-        let mut new_y = self.player.y_pos;
-
-        if self.forward {
-            new_y += (3.0 * dt) * self.player.angle.sin();
-            new_x += (3.0 * dt) * self.player.angle.cos();
-        }
-        if self.back {
-            new_y -= (3.0 * dt) * self.player.angle.sin();
-            new_x -= (3.0 * dt) * self.player.angle.cos();
-        }
-
-        if self.left {
-            new_y -= (3.0 * dt) * self.player.angle.cos();
-            new_x += (3.0 * dt) * self.player.angle.sin();
-        }
-        if self.right {
-            new_y += (3.0 * dt) * self.player.angle.cos();
-            new_x -= (3.0 * dt) * self.player.angle.sin();
-        }
-
-        if new_x < 0.0 {
-            new_x = 0.0;
-        }
-        if new_x > self.dungeon.grid.width() as f64 {
-            new_x = self.dungeon.grid.width() as f64;
-        }
-
-        if new_y < 0.0 {
-            new_y = 0.0;
-        }
-        if new_y > self.dungeon.grid.height() as f64 {
-            new_y = self.dungeon.grid.height() as f64;
-        }
-
-        self.player.x_pos = new_x;
-        self.player.y_pos = new_y;
-
-        timer::sleep_until_next_frame(&ctx, FPS);
-
-        Ok(())
-    }
-
-    fn draw(&mut self, mut ctx: &mut Context) -> GameResult<()> {
+    pub fn software_render(&self, mut ctx: &mut Context) -> GameResult<()> {
         let screen_w: u32;
         let screen_h: u32;
 
         {
             let window = ctx.gfx_context.get_window();
             let (w, h) = window.drawable_size();
+            // let (w, h) = window.size();
             screen_w = w;
             screen_h = h;
         }
 
+        let mut buffer = RgbaImage::new(screen_w, screen_h);
+
+        let proj_dist =
+            (screen_w as f64 / 2.0) / (self.player.fov / 2.0).tan();
+
+        for (x, raycast) in self.cast_rays(screen_w).iter().enumerate() {
+            let dist = raycast.distance;
+
+            let line_height = (proj_dist / dist) as f32;
+            let mut line_bottom = (screen_h as f32 / 2.0_f32) - (line_height / 2.0_f32);
+            let mut line_top = line_bottom + line_height;
+
+            if line_bottom < 0. { line_bottom = 0. };
+            if line_top > screen_h as f32 {
+                line_top = screen_h as f32;
+            }
+
+            let color = if raycast.cell_edge {
+                Rgba { data: LIGHT_GRAY }
+            } else {
+                Rgba { data: DARK_GRAY }
+            };
+
+            for y in line_bottom as u32..line_top as u32 {
+                buffer.put_pixel(x as u32, y as u32, color);
+            }
+        }
+
         graphics::clear(ctx);
+        let mut image = graphics::Image::from_rgba8(
+            ctx,
+            screen_w as u16,
+            screen_h as u16,
+            &buffer,
+        )?;
+
+        graphics::draw(
+            ctx,
+            &image,
+            [screen_w as f32 / 2.0, screen_h as f32 / 2.0].into(),
+            0.0,
+        )?;
+        graphics::present(&mut ctx);
+
+        Ok(())
+    }
+
+    fn cast_rays(&self, screen_w: u32) -> Vec<Raycast> {
+        let mut rays = Vec::new();
 
         for x in 0..screen_w {
             let ray_screen_x = x as f64 - screen_w as f64 / 2.0;
@@ -212,34 +213,70 @@ impl EventHandler for Game {
                     ray_position_x += delta_x;
                     ray_position_y += delta_y;
                 }
+
+                let actual_distance = int_dist.sqrt() * (self.player.angle - ray_angle).cos();
+                rays.push(
+                    Raycast {
+                        distance: actual_distance,
+                        cell_edge: cell_edge,
+                    }
+                );
             }
 
-            let actual_distance = int_dist.sqrt() * (self.player.angle - ray_angle).cos();
+        }
+        rays
+    }
+}
 
-            let mut line_height = (proj_dist / actual_distance) as f32;
-            let mut line_bottom = (screen_h as f32 / 2.0_f32) - (line_height / 2.0_f32);
-            let mut line_top = line_bottom + line_height;
+impl EventHandler for Game {
+    fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
+        let dt = timer::duration_to_f64(dt);
 
-            if line_bottom < 0. { line_bottom = 0. };
-            if line_top > screen_h as f32 {
-                line_top = screen_h as f32;
-            }
+        let mut new_x = self.player.x_pos;
+        let mut new_y = self.player.y_pos;
 
-            let _ = if cell_edge {
-                graphics::set_color(&mut ctx, LIGHT_GRAY.into())
-            } else {
-                graphics::set_color(&mut ctx, DARK_GRAY.into())
-            };
-
-            let _ = graphics::line(&mut ctx, &[
-                Point::new(x as f32, line_top as f32),
-                Point::new(x as f32, line_bottom as f32)
-            ]);
+        if self.forward {
+            new_y += (3.0 * dt) * self.player.angle.sin();
+            new_x += (3.0 * dt) * self.player.angle.cos();
+        }
+        if self.back {
+            new_y -= (3.0 * dt) * self.player.angle.sin();
+            new_x -= (3.0 * dt) * self.player.angle.cos();
         }
 
-        graphics::present(&mut ctx);
+        if self.left {
+            new_y -= (3.0 * dt) * self.player.angle.cos();
+            new_x += (3.0 * dt) * self.player.angle.sin();
+        }
+        if self.right {
+            new_y += (3.0 * dt) * self.player.angle.cos();
+            new_x -= (3.0 * dt) * self.player.angle.sin();
+        }
+
+        if new_x < 0.0 {
+            new_x = 0.0;
+        }
+        if new_x > self.dungeon.grid.width() as f64 {
+            new_x = self.dungeon.grid.width() as f64;
+        }
+
+        if new_y < 0.0 {
+            new_y = 0.0;
+        }
+        if new_y > self.dungeon.grid.height() as f64 {
+            new_y = self.dungeon.grid.height() as f64;
+        }
+
+        self.player.x_pos = new_x;
+        self.player.y_pos = new_y;
 
         Ok(())
+    }
+
+    fn draw(&mut self, mut ctx: &mut Context) -> GameResult<()> {
+        let return_val = self.software_render(&mut ctx);
+        timer::sleep_until_next_frame(&ctx, FPS);
+        return_val
     }
 
     fn key_down_event(&mut self, keycode: Keycode, _keymod: Mod, _repeat: bool) {
@@ -299,4 +336,9 @@ fn wrap_angle(angle: f64) -> f64 {
     }
 
     angle
+}
+
+struct Raycast {
+    distance: f64,
+    cell_edge: bool,
 }
