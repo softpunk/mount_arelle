@@ -1,4 +1,9 @@
-use image::{Rgba, DynamicImage, GenericImage, FilterType};
+extern crate picto;
+use picto::pixel::Read;
+use picto::buffer::Buffer;
+use picto::color::Rgba;
+use picto::write;
+use picto::processing::prelude::*;
 
 use std::io;
 use std::path::Path;
@@ -76,22 +81,22 @@ impl Grid {
     }
 
     pub fn render_image<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
-        let path = path.as_ref();
-
-        let mut image = DynamicImage::new_rgb8(self.width, self.height);
-
-        let white = Rgba { data: [255u8, 255u8, 255u8, 255u8] };
+        let white = Rgba::new(1.0, 1.0, 1.0, 1.0);
+        let black = Rgba::new(0.0, 0.0, 0.0, 1.0);
+        let mut image: Buffer<_, f32, _> = Buffer::from_pixel(self.width, self.height, &black);
 
         for x in 0..self.width {
             for y in 0..self.height {
                 if let Tile::Floor = self[(x, y)] {
-                    image.put_pixel(x as u32, y as u32, white);
+                    image.set(x as u32, y as u32, &white);
                 }
             }
         }
 
-        let resized = image.resize(self.width * 5, self.height * 5, FilterType::Nearest);
-        resized.to_rgba().save(path)
+        let resized = image.scale_by::<scaler::Nearest>(5.0);
+        write::to_path(path, &resized);
+
+        Ok(())
     }
 
     pub fn width(&self) -> u32 {

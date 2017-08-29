@@ -1,11 +1,14 @@
 extern crate ggez;
 use ggez::{Context, timer};
-use ggez::graphics::{self, Point, Rect, Color, DrawMode};
+use ggez::graphics::{self, Point, Rect, Color, DrawMode, GraphicsContext};
 use ggez::event::{EventHandler, Keycode, Mod, MouseState};
 use ggez::error::GameResult;
 
-extern crate image;
-use image::{Rgba, RgbaImage};
+extern crate picto;
+use picto::pixel::Read;
+use picto::buffer::Buffer;
+use picto::color::Rgba;
+use picto::write;
 
 use std::f64;
 use std::time::Duration;
@@ -14,7 +17,8 @@ use dungeon::Dungeon;
 use grid::Tile;
 use player::Player;
 
-pub const TAU: f64 = 2.0 * f64::consts::PI;
+const TAU: f64 = 2.0 * f64::consts::PI;
+const FPS: u32 = 24;
 
 pub struct Game {
     dungeon: Dungeon,
@@ -24,11 +28,6 @@ pub struct Game {
     pub left: bool,
     pub right: bool,
 }
-
-const BLACK: [u8; 4] = [0, 0, 0, 255];
-const LIGHT_GRAY: [u8; 4] = [180, 180, 180, 255];
-const DARK_GRAY: [u8; 4] = [100, 100, 100, 255];
-const FPS: u32 = 60;
 
 impl Game {
     pub fn new(dungeon: Dungeon) -> Self {
@@ -44,18 +43,15 @@ impl Game {
     }
 
     pub fn software_render(&self, mut ctx: &mut Context) -> GameResult<()> {
-        let screen_w: u32;
-        let screen_h: u32;
 
-        {
-            let window = ctx.gfx_context.get_window();
-            let (w, h) = window.drawable_size();
-            // let (w, h) = window.size();
-            screen_w = w;
-            screen_h = h;
-        }
+        let BLACK = Rgba::new(0.0, 0.0, 0.0, 1.0);
+        let RED = Rgba::new(0.2, 0.0, 0.0, 1.0);
+        let LIGHT_GRAY = Rgba::new(0.7, 0.7, 0.7, 1.0);
+        let DARK_GRAY = Rgba::new(0.4, 0.4, 0.4, 1.0);
 
-        let mut buffer = RgbaImage::new(screen_w, screen_h);
+        let (screen_w, screen_h) = ctx.gfx_context.get_drawable_size();
+
+        let mut buffer = Buffer::from_pixel(screen_w, screen_h, &RED);
 
         let proj_dist =
             (screen_w as f64 / 2.0) / (self.player.fov / 2.0).tan();
@@ -73,21 +69,21 @@ impl Game {
             }
 
             let color = if raycast.cell_edge {
-                Rgba { data: LIGHT_GRAY }
+                LIGHT_GRAY
             } else {
-                Rgba { data: DARK_GRAY }
+                DARK_GRAY
             };
 
             for y in line_bottom as u32..line_top as u32 {
-                buffer.put_pixel(x as u32, y as u32, color);
+                buffer.set(x as u32, y as u32, &color);
             }
         }
 
         graphics::clear(ctx);
         let mut image = graphics::Image::from_rgba8(
             ctx,
-            screen_w as u16,
-            screen_h as u16,
+            buffer.width() as u16,
+            buffer.height() as u16,
             &buffer,
         )?;
 

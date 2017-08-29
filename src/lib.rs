@@ -5,7 +5,7 @@ extern crate serde_json;
 extern crate ggez;
 
 extern crate rand;
-extern crate image;
+extern crate picto;
 
 pub mod dungeon;
 pub mod grid;
