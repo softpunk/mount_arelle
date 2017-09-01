@@ -6,7 +6,7 @@ use ggez::error::GameResult;
 
 extern crate picto;
 use picto::pixel::Read;
-use picto::buffer::Buffer;
+use picto::buffer::Rgba as RgbaImage;
 use picto::color::Rgba;
 use picto::write;
 
@@ -51,7 +51,7 @@ impl Game {
 
         let (screen_w, screen_h) = ctx.gfx_context.get_drawable_size();
 
-        let mut buffer = Buffer::from_pixel(screen_w, screen_h, &RED);
+        let mut buffer = RgbaImage::from_pixel(screen_w, screen_h, &RED);
 
         let proj_dist =
             (screen_w as f64 / 2.0) / (self.player.fov / 2.0).tan();
@@ -228,43 +228,46 @@ impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
         let dt = timer::duration_to_f64(dt);
 
-        let mut new_x = self.player.x_pos;
-        let mut new_y = self.player.y_pos;
+        let cur_x = self.player.x_pos;
+        let cur_y = self.player.y_pos;
+
+        let mut dx = 0.0;
+        let mut dy = 0.0;
 
         if self.forward {
-            new_y += (3.0 * dt) * self.player.angle.sin();
-            new_x += (3.0 * dt) * self.player.angle.cos();
+            dy += (3.2 * dt) * self.player.angle.sin();
+            dx += (3.2 * dt) * self.player.angle.cos();
         }
         if self.back {
-            new_y -= (3.0 * dt) * self.player.angle.sin();
-            new_x -= (3.0 * dt) * self.player.angle.cos();
+            dy -= (3.2 * dt) * self.player.angle.sin();
+            dx -= (3.2 * dt) * self.player.angle.cos();
         }
 
         if self.left {
-            new_y -= (3.0 * dt) * self.player.angle.cos();
-            new_x += (3.0 * dt) * self.player.angle.sin();
+            dy -= (3.2 * dt) * self.player.angle.cos();
+            dx +=  (3.2 * dt) * self.player.angle.sin();
         }
         if self.right {
-            new_y += (3.0 * dt) * self.player.angle.cos();
-            new_x -= (3.0 * dt) * self.player.angle.sin();
+            dy +=  (3.2 * dt) * self.player.angle.cos();
+            dx -= (3.2 * dt) * self.player.angle.sin();
         }
 
-        if new_x < 0.0 {
-            new_x = 0.0;
-        }
-        if new_x > self.dungeon.grid.width() as f64 {
-            new_x = self.dungeon.grid.width() as f64;
-        }
-
-        if new_y < 0.0 {
-            new_y = 0.0;
-        }
-        if new_y > self.dungeon.grid.height() as f64 {
-            new_y = self.dungeon.grid.height() as f64;
+        match self.dungeon.grid.get((cur_x + dx).floor() as u32, cur_y.floor() as u32) {
+            Some(&Tile::Wall) | None => {
+                dx = 0.0;
+            },
+            _ => {},
         }
 
-        self.player.x_pos = new_x;
-        self.player.y_pos = new_y;
+        match self.dungeon.grid.get(cur_x.floor() as u32, (cur_y + dy).floor() as u32) {
+            Some(&Tile::Wall) | None => {
+                dy = 0.0;
+            },
+            _ => {},
+        }
+
+        self.player.x_pos += dx;
+        self.player.y_pos += dy;
 
         Ok(())
     }
@@ -321,6 +324,11 @@ impl EventHandler for Game {
     ) {
         self.player.rotate(xrel as f64 * 0.5);
     }
+
+    // fn resize_event(&mut self, ctx: &mut Context, width: u32, height: u32) {
+    //     println!("{}x{}", width, height);
+    //     let _ = graphics::set_screen_coordinates(ctx, 0.0, width as f32, 0.0, height as f32);
+    // }
 }
 
 fn wrap_angle(angle: f64) -> f64 {
