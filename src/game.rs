@@ -43,7 +43,6 @@ impl Game {
     }
 
     pub fn software_render(&self, mut ctx: &mut Context) -> GameResult<()> {
-
         let BLACK = Rgba::new(0.0, 0.0, 0.0, 1.0);
         let RED = Rgba::new(0.2, 0.0, 0.0, 1.0);
         let LIGHT_GRAY = Rgba::new(0.7, 0.7, 0.7, 1.0);
@@ -227,30 +226,46 @@ impl Game {
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context, dt: Duration) -> GameResult<()> {
         let dt = timer::duration_to_f64(dt);
+        let speed = 3.3;
 
         let cur_x = self.player.x_pos;
         let cur_y = self.player.y_pos;
 
-        let mut dx = 0.0;
-        let mut dy = 0.0;
+        let angle_x = self.player.angle.cos();
+        let angle_y = self.player.angle.sin();
+
+        let mut x_dist = 0.0;
+        let mut y_dist = 0.0;
 
         if self.forward {
-            dy += (3.2 * dt) * self.player.angle.sin();
-            dx += (3.2 * dt) * self.player.angle.cos();
-        }
-        if self.back {
-            dy -= (3.2 * dt) * self.player.angle.sin();
-            dx -= (3.2 * dt) * self.player.angle.cos();
+            x_dist += angle_x;
+            y_dist += angle_y;
+        } else if self.back {
+            x_dist -= angle_x;
+            y_dist -= angle_y;
         }
 
         if self.left {
-            dy -= (3.2 * dt) * self.player.angle.cos();
-            dx +=  (3.2 * dt) * self.player.angle.sin();
+            x_dist += angle_y;
+            y_dist -= angle_x;
+        } else if self.right {
+            x_dist -= angle_y;
+            y_dist += angle_x;
         }
-        if self.right {
-            dy +=  (3.2 * dt) * self.player.angle.cos();
-            dx -= (3.2 * dt) * self.player.angle.sin();
+
+        let length = (x_dist.powi(2) + y_dist.powi(2)).sqrt();
+        let mut nx: f64 = x_dist / length;
+        let mut ny: f64 = y_dist / length;
+        if nx.is_nan() {
+            nx = 0.0;
         }
+
+        if ny.is_nan() {
+            ny = 0.0;
+        }
+
+        let mut dx = nx * speed * dt;
+        let mut dy = ny * speed * dt;
 
         match self.dungeon.grid.get((cur_x + dx).floor() as u32, cur_y.floor() as u32) {
             Some(&Tile::Wall) | None => {
