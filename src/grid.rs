@@ -1,37 +1,42 @@
-extern crate picto;
 use picto::pixel::Read;
 use picto::buffer::Buffer;
 use picto::color::Rgba;
-use picto::write;
+use picto::{write, read};
 use picto::processing::prelude::*;
+use picto::buffer::Rgba as RgbaImage;
 
 use std::io;
 use std::path::Path;
 use std::ops::{Index, IndexMut};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Grid {
     width: u32,
     height: u32,
     tiles: Vec<Tile>,
+    textures: Vec<RgbaImage>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Tile {
-    Wall,
+    Wall(usize),
     Floor,
 }
 
 impl Grid {
-    pub fn new(w: u32, h: u32, tiles: Tile) -> Self {
+    pub fn new(w: u32, h: u32) -> Self {
         if w == 0 || h == 0 {
             panic!("Width and height must be greater than 0");
         }
 
+        let wall_bytes = include_bytes!("../resources/Tileable10c.png").to_vec();
+        let wall_image = read::from_memory(wall_bytes).unwrap();
+
         Grid {
             width: w,
             height: h,
-            tiles: vec![tiles; (w * h) as usize],
+            tiles: vec![Tile::Wall(0); (w * h) as usize],
+            textures: vec![wall_image],
         }
     }
 
@@ -73,7 +78,7 @@ impl Grid {
 
                     Some(count)
                 },
-                Tile::Wall => {
+                Tile::Wall(_texture) => {
                     None
                 },
             }

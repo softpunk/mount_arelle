@@ -9,7 +9,7 @@ use std::io;
 use grid::Grid;
 use grid::Tile;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Dungeon {
     pub grid: Grid,
     player_spawn: (f64, f64),
@@ -40,7 +40,7 @@ impl Dungeon {
         let dw = dungeon_bounds.ind_sample(&mut rng);
         let dh = dungeon_bounds.ind_sample(&mut rng);
 
-        let mut grid = Grid::new(dw, dh, Tile::Wall);
+        let mut grid = Grid::new(dw, dh);
 
         let attempts = rng.gen_range(20, 041);
 
@@ -210,14 +210,14 @@ fn carve_v(grid: &mut Grid, y1: u32, y2: u32, x: u32) {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone)]
 enum DungeonSize {
     Small,
     Med,
     Large,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone)]
 enum RoomSize {
     Small,
     Med,

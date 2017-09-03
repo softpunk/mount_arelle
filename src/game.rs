@@ -1,10 +1,8 @@
-extern crate ggez;
 use ggez::{Context, timer};
 use ggez::graphics::{self, Point, Rect, Color, DrawMode, GraphicsContext};
 use ggez::event::{EventHandler, Keycode, Mod, MouseState};
 use ggez::error::GameResult;
 
-extern crate picto;
 use picto::pixel::Read;
 use picto::buffer::Rgba as RgbaImage;
 use picto::color::Rgba;
@@ -19,6 +17,14 @@ use player::Player;
 
 const TAU: f64 = 2.0 * f64::consts::PI;
 const FPS: u32 = 24;
+
+lazy_static! {
+    static ref BLACK: Rgba = Rgba::new(0.0, 0.0, 0.0, 1.0);
+    static ref WHITE: Rgba = Rgba::new(1.0, 1.0, 1.0, 1.0);
+    static ref RED: Rgba = Rgba::new(0.2, 0.0, 0.0, 1.0);
+    static ref LIGHT_GRAY: Rgba = Rgba::new(0.7, 0.7, 0.7, 1.0);
+    static ref DARK_GRAY: Rgba = Rgba::new(0.4, 0.4, 0.4, 1.0);
+}
 
 pub struct Game {
     dungeon: Dungeon,
@@ -43,11 +49,6 @@ impl Game {
     }
 
     pub fn software_render(&self, mut ctx: &mut Context) -> GameResult<()> {
-        let BLACK = Rgba::new(0.0, 0.0, 0.0, 1.0);
-        let RED = Rgba::new(0.2, 0.0, 0.0, 1.0);
-        let LIGHT_GRAY = Rgba::new(0.7, 0.7, 0.7, 1.0);
-        let DARK_GRAY = Rgba::new(0.4, 0.4, 0.4, 1.0);
-
         let (screen_w, screen_h) = ctx.gfx_context.get_drawable_size();
 
         let mut buffer = RgbaImage::from_pixel(screen_w, screen_h, &RED);
@@ -68,9 +69,9 @@ impl Game {
             }
 
             let color = if raycast.cell_edge {
-                LIGHT_GRAY
+                *LIGHT_GRAY
             } else {
-                DARK_GRAY
+                *DARK_GRAY
             };
 
             for y in line_bottom as u32..line_top as u32 {
@@ -92,6 +93,15 @@ impl Game {
             [screen_w as f32 / 2.0, screen_h as f32 / 2.0].into(),
             0.0,
         )?;
+
+        graphics::circle(
+            ctx,
+            DrawMode::Line,
+            [screen_w as f32 / 2.0, screen_h as f32 / 2.0].into(),
+            3.0,
+            0.0001,
+        )?;
+
         graphics::present(&mut ctx);
 
         Ok(())
@@ -151,7 +161,7 @@ impl Game {
                             f64::floor(ray_position_y) as u32;
 
                         match self.dungeon.grid.get(tile_map_x, tile_map_y) {
-                            Some(&Tile::Wall) | None => {
+                            Some(&Tile::Wall(_)) | None => {
                                 let dist_x = ray_position_x - self.player.x_pos;
                                 let dist_y = ray_position_y - self.player.y_pos;
                                 int_dist = dist_x.powi(2) + dist_y.powi(2);
@@ -187,7 +197,7 @@ impl Game {
                     let tile_map_y: u32 = f64::floor(ray_position_y + (if is_ray_up { -cell_size } else { 0.0 })) as u32;
 
                     match self.dungeon.grid.get(tile_map_x, tile_map_y) {
-                        Some(&Tile::Wall) | None => {
+                        Some(&Tile::Wall(_)) | None => {
                             let distance_x: f64 = ray_position_x - self.player.x_pos;
                             let distance_y: f64 = ray_position_y - self.player.y_pos;
                             let x_intersection_distance = distance_x.powi(2) + distance_y.powi(2);
@@ -268,14 +278,14 @@ impl EventHandler for Game {
         let mut dy = ny * speed * dt;
 
         match self.dungeon.grid.get((cur_x + dx).floor() as u32, cur_y.floor() as u32) {
-            Some(&Tile::Wall) | None => {
+            Some(&Tile::Wall(_)) | None => {
                 dx = 0.0;
             },
             _ => {},
         }
 
         match self.dungeon.grid.get(cur_x.floor() as u32, (cur_y + dy).floor() as u32) {
-            Some(&Tile::Wall) | None => {
+            Some(&Tile::Wall(_)) | None => {
                 dy = 0.0;
             },
             _ => {},
