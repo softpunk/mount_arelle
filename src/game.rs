@@ -4,6 +4,9 @@ use ggez::event::{EventHandler, Keycode, Mod, MouseState};
 use ggez::error::GameResult;
 
 use picto::pixel::Read;
+use picto::Region;
+use picto::processing::prelude::*;
+use picto::processing::scaler::Nearest;
 use picto::buffer::Rgba as RgbaImage;
 use picto::color::Rgba;
 use picto::write;
@@ -227,24 +230,38 @@ impl EventHandler for Game {
                 }
 
                 let actual_dist = int_dist.sqrt() * (self.player.angle - ray_angle).cos();
-                let line_height = (proj_dist / actual_dist) as f32;
+                let line_height: i32 = (proj_dist / actual_dist).round() as i32;
+                let mut line_bottom: i32 = ((screen_h as i32 / 2) - (line_height as i32 / 2));
+                let mut line_top: i32 = line_bottom + line_height;
 
-                let mut line_bottom = (screen_h as f32 / 2.0_f32) - (line_height / 2.0_f32);
-                let mut line_top = line_bottom + line_height;
+                let texture = match self.dungeon.grid.get(cell_x, cell_y) {
+                    Some(&Tile::Wall(id)) => {
+                        self.dungeon.grid.texture(id)
+                    },
+                    _ => { unreachable!(); },
+                }.unwrap();
 
-                if line_bottom < 0. { line_bottom = 0. };
-                if line_top > screen_h as f32 {
-                    line_top = screen_h as f32;
-                }
+                // let color = if cell_edge {
+                //     *LIGHT_GRAY
+                // } else {
+                //     *DARK_GRAY
+                // };
 
-                let color = if cell_edge {
-                    *LIGHT_GRAY
+                let ray_dir_x = self.player.angle.sin();
+                let ray_dir_y = self.player.angle.cos();
+
+                let tex_x: u32 = if cell_edge {
+                    (((int_x - cell_x as f64) % 1.0) * (texture.width()  as f64 - 1.0).round()) as u32
                 } else {
-                    *DARK_GRAY
+                    (((int_y - cell_y as f64) % 1.0) * (texture.width()  as f64 - 1.0).round()) as u32
                 };
 
-                for y in line_bottom as u32..line_top as u32 {
-                    buffer.set(x as u32, y as u32, &color);
+                for y in 0..screen_h {
+                    if y as i32 >= line_bottom && (y as i32) < line_top {
+                        let line_y = y as i32 - line_bottom;
+                        let tex_y = ((line_y as f64 / line_height as f64) * (texture.height() as f64- 1.0)).floor() as u32;
+                        buffer.set(x as u32, y as u32, &texture.get(tex_x, tex_y));
+                    }
                 }
             }
         }

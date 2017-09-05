@@ -48,6 +48,10 @@ impl Grid {
         self.tiles.get_mut((x + (self.width * y)) as usize)
     }
 
+    pub fn texture(&self, id: usize) -> Option<&RgbaImage> {
+        self.textures.get(id)
+    }
+
     pub fn openings(&self, x: u32, y: u32) -> Option<u32> {
         self.get(x, y).and_then(|tile| {
             match *tile {
